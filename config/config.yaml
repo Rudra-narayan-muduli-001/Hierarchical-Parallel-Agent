@@ -1,0 +1,37 @@
+tiers:
+  order: [S, A, B, C, D]
+
+categories:
+  coding:
+    boss_model: mock-super
+    boss_system_prompt: prompts/boss/coding_boss.md
+
+models:
+  - id: mock-super
+    provider: mock
+    tier: S
+    context_window: 128000
+    api_key_env: MOCK_API_KEY
+    rate_limit_rpm: 1000
+  - id: mock-mid
+    provider: mock
+    tier: B
+    context_window: 64000
+    api_key_env: MOCK_API_KEY
+    rate_limit_rpm: 1000
+  - id: mock-cheap
+    provider: mock
+    tier: D
+    context_window: 16000
+    api_key_env: MOCK_API_KEY
+    rate_limit_rpm: 1000
+
+failover:
+  max_retries_per_node: 2
+  retry_backoff_seconds: [2, 5]
+  warning_threshold_percent: 60
+  cooldown_after_failure_seconds: 300
+
+behavior:
+  continue_on_degraded: true
+  allow_model_reuse_on_pool_exhaustion: true
