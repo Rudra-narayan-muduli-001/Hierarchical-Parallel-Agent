@@ -15,6 +15,11 @@ dependencies = [
     "pytest>=7.4.0",
     "httpx>=0.25.0",
     "websockets>=12.0",
+    # MCP Protocol — worker pool integration with InfoSeeker
+    "mcp>=1.20.0",
+    "fastmcp>=2.0.0",
+    # Optional: LangChain MCP adapters
+    "langchain-mcp-adapters>=0.1.0",
 ]
 
 [tool.setuptools.packages.find]
