@@ -5,6 +5,18 @@ categories:
   coding:
     boss_model: mock-super
     boss_system_prompt: prompts/boss/coding_boss.md
+  research:
+    boss_model: mock-super
+    boss_system_prompt: prompts/boss/research_boss.md
+    worker_pools:
+      search:
+        pool_size: 8
+      browser:
+        pool_size: 2
+      code:
+        pool_size: 1
+      filesystem:
+        pool_size: 1
 
 models:
   - id: mock-super
