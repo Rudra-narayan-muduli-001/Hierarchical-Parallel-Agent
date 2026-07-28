@@ -1,0 +1,49 @@
+# MCP Server Configuration for Worker Pools
+# Each worker pool connects to an MCP server subprocess.
+# Adapted from InfoSeeker's pool_config.yaml + agent MCP configurations.
+
+pools:
+  search:
+    max_pool_size: 40
+    max_retries: 5
+    retry_delay_seconds: 1.0
+    mcp_server:
+      type: firecrawl
+      command: /usr/local/bin/node
+      args: ["dist/index.js"]
+      cwd: "InfoSeeker-main/src/infoseeker/mcp_servers/firecrawl-mcp-server"
+      env:
+        FIRECRAWL_API_KEY: "${FIRECRAWL_API_KEY}"
+
+  browser:
+    max_pool_size: 5
+    max_retries: 3
+    retry_delay_seconds: 2.0
+    mcp_server:
+      type: playwright
+      command: npx
+      args: ["-y", "@playwright/mcp"]
+
+  code:
+    max_pool_size: 2
+    max_retries: 3
+    retry_delay_seconds: 1.0
+    mcp_server:
+      type: code_exec
+      command: python
+      args: ["-m", "infoseeker.mcp_servers.code_exec"]
+      cwd: "InfoSeeker-main"
+      env:
+        PYTHONPATH: "src"
+
+  filesystem:
+    max_pool_size: 2
+    max_retries: 3
+    retry_delay_seconds: 1.0
+    mcp_server:
+      type: filesystem_tools
+      command: python
+      args: ["-m", "infoseeker.mcp_servers.filesystem_tools"]
+      cwd: "InfoSeeker-main"
+      env:
+        PYTHONPATH: "src"
