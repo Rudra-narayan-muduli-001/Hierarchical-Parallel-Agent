@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -17,6 +17,7 @@ class ModelSpec(BaseModel):
 class CategoryConfig(BaseModel):
     boss_model: str
     boss_system_prompt: str
+    worker_pools: Optional[Dict[str, Dict[str, Any]]] = None
 
 
 class FailoverConfig(BaseModel):
@@ -41,6 +42,7 @@ class Config(BaseModel):
     models: List[ModelSpec]
     failover: FailoverConfig
     behavior: BehaviorConfig
+    mcp_servers: Optional[Dict[str, Any]] = None
 
     @model_validator(mode="after")
     def _validate_models(self):
