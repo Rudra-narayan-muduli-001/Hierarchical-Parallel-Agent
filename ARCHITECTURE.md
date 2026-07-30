@@ -245,10 +245,79 @@ These weren't explicitly specified but are necessary for the system to actually 
 
 ---
 
-## 13. Tech Stack Summary
+## 14. InfoSeeker Integration — MCP Worker Pools
+
+### 14.1 Overview
+InfoSeeker (github.com/nj19257/InfoSeeker) is adapted into Parallel Mind as a set of **MCP-based worker pools** for the `research` category. The worker pool pattern enables massive parallelization (up to 40 concurrent workers) within a Supervisor's scope.
+
+### 14.2 Architecture
+
+```
+Research Boss (LLM tier S)
+  └── Research Manager (LLM tier A)
+       └── Research Supervisor (LLM tier B) ← manages WorkerPool
+            ├── SearchWorker xN (Firecrawl MCP)   ← parallel web search
+            ├── BrowserWorker xM (Playwright MCP)  ← browser automation
+            ├── CodeWorker (code_exec MCP)         ← code execution
+            └── FileWorker (filesystem_tools MCP)  ← file operations
+```
+
+### 14.3 What is kept from InfoSeeker
+- **Worker pool pattern** — lock-protected pool, `asyncio.gather` parallel execution, retry with backoff
+- **MCP server integrations** — Firecrawl (search), Playwright (browser), code_exec, filesystem_tools
+- **Decomposition prompts** — research query breakdown strategy for Supervisors
+- **Worker system prompts** — agent-level instructions for each worker type
+
+### 14.4 What is replaced
+| InfoSeeker original | Parallel Mind replacement |
+|---|---|
+| LangChain `create_agent()` | Native `BaseMCPWorker` using `mcp` SDK directly |
+| LangChain agent loop | Node lifecycle + Event Bus |
+| HostAgent (manual orchestration) | Boss → Manager → Supervisor hierarchy |
+| ManagerHub (MCP tool) | Pool Allocator + Orchestrator Core |
+| Autogen model clients | Unified Provider layer |
+
+### 14.5 Worker Pool Flow
+1. Research **Supervisor** receives sub-task and remaining model pool
+2. Supervisor loads pool config from `config/mcp_servers.yaml`
+3. **WorkerPool** lazily initializes N MCP workers (subprocesses)
+4. Supervisor decomposes query into parallel subtasks
+5. `WorkerPool.execute_subtasks(subtasks)` runs them via `asyncio.gather`
+6. Results flow back for Supervisor synthesis (same as any Labour)
+
+### 14.6 Files Added
+
+| File | Source | Purpose |
+|---|---|---|
+| `src/hierarchy/workers/base_worker.py` | InfoSeeker agent pattern | Base MCP worker with `mcp` SDK client |
+| `src/hierarchy/workers/worker_pool.py` | InfoSeeker pool pattern | Pool manager with retry + parallel execution |
+| `src/hierarchy/workers/search_labour.py` | InfoSeeker SearchAgent | Firecrawl web search worker |
+| `src/hierarchy/workers/browser_labour.py` | InfoSeeker BrowserAgent | Playwright browser worker |
+| `src/hierarchy/workers/code_labour.py` | InfoSeeker CodeAgent | Code execution worker |
+| `src/hierarchy/workers/file_labour.py` | InfoSeeker FilesystemAgent | Filesystem operations worker |
+| `config/mcp_servers.yaml` | InfoSeeker pool_config.yaml | MCP server configurations |
+| `config/prompts/labour/search_labour.md` | InfoSeeker SearchAgent prompt | Search worker system prompt |
+| `config/prompts/labour/browser_labour.md` | InfoSeeker BrowserAgent prompt | Browser worker system prompt |
+| `config/prompts/labour/code_labour.md` | InfoSeeker CodeAgent prompt | Code worker system prompt |
+| `config/prompts/labour/file_labour.md` | InfoSeeker FilesystemAgent prompt | File worker system prompt |
+| `config/prompts/supervisor/research_supervisor.md` | InfoSeeker SearchManager prompt | Research decomposition + pool coordination |
+| `config/prompts/manager/research_manager.md` | InfoSeeker Manager strategy | Research manager synthesis prompt |
+
+### 14.7 Integration Points
+
+- **Pool Allocator** assigns the `research` category its own model roster (with MCP workers as Labour variants)
+- **Supervisor (research variant)** holds a `WorkerPool` reference instead of individual Labour nodes
+- **Failover** applies at the Supervisor level: if a pool worker exhausts retries, the Supervisor spawns a replacement
+- **Event Bus** tracks pool activity: `worker_pool_created`, `worker_task_started`, `worker_task_completed`, `worker_task_failed`
+- **GUI** shows pool workers as child nodes of the research Supervisor
+
+---
+
+## 15. Tech Stack Summary
 
 - **Backend/Orchestrator**: Python (asyncio for parallel Labour execution), Pydantic for schemas.
 - **LLM access**: unified adapter layer per provider (OpenAI/Anthropic/DeepSeek/etc.), so swapping models is just changing an ID.
+- **Worker Pools (InfoSeeker integration)**: MCP (Model Context Protocol) via `mcp` SDK + `fastmcp`, subprocess isolation.
 - **Event Bus**: in-process async pub/sub (e.g. `asyncio.Queue` based), broadcast over WebSocket.
 - **Persistence**: SQLite (or JSON lines log) for task tree + event history.
 - **GUI backend**: FastAPI.
