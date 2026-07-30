@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from datetime import datetime
 from enum import Enum
+from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -14,6 +19,19 @@ class NodeState(str, Enum):
     replaced = "replaced"
     degraded = "degraded"
 
+
+class ThoughtEntry(BaseModel):
+    text: str
+    ts: datetime
+
+
+class ReplacementEntry(BaseModel):
+    from_model: str
+    to_model: str
+    reason: str
+    ts: datetime
+
+
 class NodeSnapshot(BaseModel):
     id: str
     role: str
@@ -21,10 +39,13 @@ class NodeSnapshot(BaseModel):
     tier: str
     model_id: str
     reused: bool = False
-    parent_id: str | None = None
+    parent_id: Optional[str] = None
     children_ids: list[str] = []
     status: NodeState = NodeState.idle
-    thought_stream: list[dict] = []
-    output: str | None = None
-    error: str | None = None
-    replaced_history: list[dict] = []
+    thought_stream: list[ThoughtEntry] = []
+    output: Optional[str] = None
+    error: Optional[str] = None
+    replaced_history: list[ReplacementEntry] = []
+    retries: int = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
