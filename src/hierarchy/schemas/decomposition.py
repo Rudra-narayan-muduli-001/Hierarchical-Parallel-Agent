@@ -1,7 +1,19 @@
+from __future__ import annotations
+
+from typing import Optional
+
 from pydantic import BaseModel
 
 
+class DecomposedSubTask(BaseModel):
+    id: str
+    description: str
+    assigned_tier: str
+    assigned_role: str
+    depends_on: list[str] = []
+
+
 class DecompositionPlan(BaseModel):
-    sub_tasks: list[dict]
-    assigned_tiers: list[str]
-    roles: list[str] | None = None
+    task_id: str
+    sub_tasks: list[DecomposedSubTask]
+    reasoning: str = ""
