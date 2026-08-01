@@ -1,12 +1,4 @@
-"""Supervisor — spawns Labours, handles failover, performs synthesis.
-
-Supervisor is a Node that:
-  1. Decomposes its sub-task into Labour-level atomic tasks
-  2. Computes Labour pools from Pool Allocator
-  3. Creates and runs Labours in parallel
-  4. Handles Labour failures (swap model, re-run with retries)
-  5. Synthesises Labour outputs into a single result
-"""
+"""Supervisor — spawns Labours, handles failover, performs synthesis."""
 
 from __future__ import annotations
 
@@ -20,15 +12,14 @@ from hierarchy.core.synthesizer import synthesize
 from hierarchy.core.pool_allocator import PoolAllocator
 from hierarchy.events.bus import EventBus
 from hierarchy.providers.base import Provider
-from hierarchy.providers.errors import ProviderError, TimeoutError, RateLimitError
+from hierarchy.providers.errors import ProviderError
 from hierarchy.registry.model_registry import ModelRegistry
-from hierarchy.schemas.decomposition import DecompositionPlan, DecomposedSubTask
-from hierarchy.schemas.synthesis import SynthesisResult, ChildOutput
+from hierarchy.schemas.decomposition import DecompositionPlan
 from hierarchy.schemas.node_state import NodeState
 
 
 class Supervisor(Node):
-    """Mid-level planner. Spawns Labours and synthesizes their output."""
+    """Mid-level planner that spawns Labours and synthesizes their output."""
 
     def __init__(
         self,
@@ -60,30 +51,34 @@ class Supervisor(Node):
         self._max_retries = max_retries
 
     async def run(self, task_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute the Supervisor workflow."""
+        """Execute the Supervisor lifecycle."""
         self.status = NodeState.thinking
         task_text = task_context.get("task", "")
-        self.add_thought(f"Supervisor {self.id} starting")
+        self.add_thought(f"Supervisor starting: {task_text[:80]}")
 
         plan = await self._decompose(task_text)
-        self.add_thought(f"Decomposed into {len(plan.sub_tasks)} subtasks")
+        n = len(plan.sub_tasks)
+        self.add_thought(f"Decomposed into {n} Labour subtask(s)")
 
-        labours = []
+        labours: List[Labour] = []
+        pool_context = task_context.get("pool_context", {})
         for i, sub in enumerate(plan.sub_tasks):
+            desc = getattr(sub, "description", str(sub))
+            assigned_tier = getattr(sub, "assigned_tier", self.tier) or self.tier
             pool = self._pool_allocator.compute_labour_pool(
                 supervisor_model_id=self.model_id,
-                active_labour_ids=[lab.model_id for lab in labours],
-                boss_model_id=task_context.get("boss_model_id", ""),
-                manager_model_id=task_context.get("manager_model_id", ""),
-                active_manager_ids=task_context.get("active_manager_ids", []),
-                active_supervisor_ids=task_context.get("active_supervisor_ids", []),
-                complexity_ceiling=getattr(sub, "assigned_tier", None),
+                active_labour_ids=[l.model_id for l in labours],
+                boss_model_id=pool_context.get("boss_model_id", ""),
+                manager_model_id=pool_context.get("manager_model_id", ""),
+                active_manager_ids=pool_context.get("active_manager_ids", []),
+                active_supervisor_ids=pool_context.get("active_supervisor_ids", []),
+                complexity_ceiling=assigned_tier,
             )
             model = pool.available[0] if pool.available else self.model_id
-            lb = Labour(
+            lab = Labour(
                 node_id=f"{self.id}_labour_{i}",
                 category=self.category,
-                tier=getattr(sub, "assigned_tier", self.tier),
+                tier=assigned_tier,
                 model_id=model,
                 provider=self._provider,
                 parent_id=self.id,
@@ -96,24 +91,42 @@ class Supervisor(Node):
             self.children_ids.append(lab.id)
 
         self.status = NodeState.waiting_children
-        results = await self._run_labours_parallel(labours, task_text)
+
+        child_outputs: List[Dict[str, Any]] = []
+        async def _run_labour(lab: Labour) -> Dict[str, Any]:
+            try:
+                return await lab.run({"task": task_text})
+            except Exception as e:
+                self.add_thought(f"Labour {lab.id} failed: {e}")
+                self.set_error(type(e).__name__, str(e))
+                return {"output": f"Error: {e}", "confidence": 0.0, "node_id": lab.id}
+
+        results = await asyncio.gather(
+            *[_run_labour(lab) for lab in labours],
+            return_exceptions=True,
+        )
+
+        for lab, r in zip(labours, results):
+            if isinstance(r, Exception):
+                child_output.append({
+                    "node_id": lab.id, "output": str(r),
+                    "confidence": 0.0, "caveats": "failed",
+                })
+            else:
+                child_output.append({
+                    "node_id": lab.id,
+                    "output": r.get("output", str(r)),
+                    "confidence": r.get("confidence", 1.0),
+                    "caveats": "",
+                })
 
         self.status = NodeState.synthesizing
-        self.add_thought(f"Synthesizing {len(results)} child outputs")
-
-        child_outputs = [
-            {"node_id": r.get("node_id", lab.id),
-             "output": r["output"],
-             "confidence": r.get("confidence", 1.0),
-             "caveats": r.get("caveats", "")}
-            for lab, r in zip(labours, results)
-            if r and r.get("output")
-        ]
+        self.add_thought(f"Synthesizing {len(child_output)} outputs")
 
         synthesis = await synthesize(
             provider=self._provider,
             task_description=task_text,
-            child_outputs=child_outputs,
+            child_outputs=child_output,
         )
 
         self.set_output(synthesis.merged_output)
@@ -127,38 +140,21 @@ class Supervisor(Node):
 
     async def _decompose(self, task: str) -> DecompositionPlan:
         prompt = (
-            f"Decompose this task into atomic subtasks for Labours: "
-            f'"{task}". Output valid JSON with keys: '
-            f'"task_id" (str), "sub_tasks" (list of {{"id": str, "description": str, '
-            f'"assigned_tier": str, "assigned_role": str}}).'
+            f'Decompose this task into atomic subtasks for Labours: "{task}". '
+            f"Output valid JSON with keys: task_id (str), sub_tasks "
+            f'(list of {{"id": str, "description": str, "assigned_tier": str, "assigned_role": str}}).'
         )
         messages = [{"role": "user", "content": prompt}]
         result = await self._provider.complete(messages)
-        content = result.get("content", "[]")
+        content = result.get("content", "{}")
         try:
             data = json.loads(content)
         except json.JSONDecodeError:
             data = {
                 "task_id": task,
-                "sub_tasks": [{"id": "default", "description": task, "assigned_tier": "B", "assigned_role": "labour"}],
+                "sub_tasks": [{
+                    "id": "sub_0", "description": task,
+                    "assigned_tier": "B", "assigned_role": "labour",
+                }],
             }
-        return DecompositionPlan(**input(data) if isinstance(data, dict) else data)
-
-    async def _run_children_parallel(
-        self, labours: List[Labour], task: str
-    ) -> List[Dict[str, Any]]:
-        """Run Labours in parallel with failover for any that raise errors."""
-
-        async def safe_run(lab: Labour) -> Dict[str, Any]:
-            try:
-                return await lab.run({"task": task})
-            except (ProviderError, RuntimeError) as e:
-                self.add_thought(f"Labour {lab.id} failed: {e}. Swapping model.")
-                new_model = self._pool_allocator._registry.all_model_ids[0]
-                lab.model_id = new_model
-                lab.record_replacement(payload.get("model_id", lab.model_id), new_model, str(e))
-                return {"output": f"Failed after retries: {e}", "confidence": 0.0, "node_id": lab.id}
-
-        tasks = [defection(lab) for lab in labours]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
-        return [r if isinstance(r, dict) else {"output": str(r), "confidence": 0.0} for r in results]
+        return DecompositionPlan(**data)
