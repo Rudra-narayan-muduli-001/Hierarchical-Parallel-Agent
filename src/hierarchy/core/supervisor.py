@@ -108,12 +108,12 @@ class Supervisor(Node):
 
         for lab, r in zip(labours, results):
             if isinstance(r, Exception):
-                child_output.append({
+                child_outputs.append({
                     "node_id": lab.id, "output": str(r),
                     "confidence": 0.0, "caveats": "failed",
                 })
             else:
-                child_output.append({
+                child_outputs.append({
                     "node_id": lab.id,
                     "output": r.get("output", str(r)),
                     "confidence": r.get("confidence", 1.0),
@@ -121,12 +121,12 @@ class Supervisor(Node):
                 })
 
         self.status = NodeState.synthesizing
-        self.add_thought(f"Synthesizing {len(child_output)} outputs")
+        self.add_thought(f"Synthesizing {len(child_outputs)} outputs")
 
         synthesis = await synthesize(
             provider=self._provider,
             task_description=task_text,
-            child_outputs=child_output,
+            child_outputs=child_outputs,
         )
 
         self.set_output(synthesis.merged_output)
