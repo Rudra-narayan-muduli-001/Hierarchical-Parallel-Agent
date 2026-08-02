@@ -45,7 +45,7 @@ class EventStore:
                     self.repo.save_snapshot(
                         task_id=self.task_id,
                         node_id=node_id,
-                        snapshot_data=snap.model_dump(),
+                        snapshot_data=snap.model_dump(mode="json"),
                     )
 
     def track_snapshot(self, snapshot: NodeSnapshot) -> None:
