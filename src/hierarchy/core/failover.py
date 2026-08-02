@@ -70,11 +70,12 @@ class FailoverManager:
 
     @property
     def available_models(self) -> List[str]:
+        now = datetime.now(timezone.utc)
         models = self._registry.all_model_ids
         return [
             m for m in models
             if m not in self._model_cooldowns
-            or self._model_cooldowns[m] >= datetime.now(timezone.utc)
+            or self._model_cooldowns[m] <= now
         ]
 
     @property
@@ -111,7 +112,11 @@ class FailoverManager:
             }))
 
     def record_cooldown(self, model_id: str) -> None:
-        self._model_cooldowns[model_id] = datetime.now(timezone.utc)
+        from datetime import timedelta
+        self._model_cooldowns[model_id] = (
+            datetime.now(timezone.utc)
+            + timedelta(seconds=self._config.cooldown_after_failure_seconds)
+        )
 
     def _failure_threshold(self) -> float:
         return self._config.warning_threshold_percent / 100.0
