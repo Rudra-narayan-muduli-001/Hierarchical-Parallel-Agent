@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
+from hierarchy.core.peer_bus import PeerBus, category_rank_scope, parent_rank_scope
 from hierarchy.events.bus import EventBus
 from hierarchy.providers.base import Provider
 from hierarchy.registry.model_registry import ModelRegistry
@@ -45,6 +46,7 @@ class Node(ABC):
         provider: Optional[Provider] = None,
         event_bus: Optional[EventBus] = None,
         registry: Optional[ModelRegistry] = None,
+        peer_bus: Optional[PeerBus] = None,
         reused: bool = False,
     ):
         self.id = node_id
@@ -56,6 +58,7 @@ class Node(ABC):
         self._provider = provider
         self._event_bus = event_bus
         self._registry = registry
+        self._peer_bus = peer_bus
 
         self.reused = reused
         self.children_ids: List[str] = []
@@ -166,3 +169,58 @@ class Node(ABC):
     def _emit(self, event) -> None:
         if self._event_bus:
             self._event_bus.emit(event)
+
+    # ── Peer communication ──────────────────────────────────────
+
+    def _category_rank_scope(self) -> str:
+        return category_rank_scope(self.category, self.role)
+
+    def _parent_rank_scope(self) -> str:
+        if not self.parent_id:
+            return ""
+        return parent_rank_scope(self.parent_id, self.role)
+
+    def publish_peer(
+        self,
+        text: str,
+        scope: str = "category_rank",
+        task_ref: Optional[str] = None,
+    ) -> Optional[Any]:
+        """Publish a peer message to a scope.
+
+        Args:
+            text: Short message text.
+            scope: 'category_rank' (default), 'parent', or explicit scope key.
+            task_ref: Optional task reference ID.
+        """
+        if not self._peer_bus:
+            return None
+        if scope == "category_rank":
+            actual = self._category_rank_scope()
+        elif scope == "parent":
+            actual = self._parent_rank_scope()
+        else:
+            actual = scope
+        return self._peer_bus.publish(
+            scope=actual,
+            from_node_id=self.id,
+            text=text,
+            task_ref=task_ref,
+        )
+
+    def get_relevant_peer_notes(
+        self, scope: str = "category_rank", limit: int = 10
+    ) -> List[str]:
+        """Retrieve peer notes from a scope (e.g., to feed into synthesis)."""
+        if not self._peer_bus:
+            return []
+        if scope == "category_rank":
+            actual = self._category_rank_scope()
+        elif scope == "parent":
+            actual = self._parent_rank_scope()
+        else:
+            actual = scope
+        msgs = self._peer_bus.get_messages(actual, limit=limit)
+        return [
+            f"[{m.from_node_id}] {m.text}" for m in msgs if m.from_node_id != self.id
+        ]
