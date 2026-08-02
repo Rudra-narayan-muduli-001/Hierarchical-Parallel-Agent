@@ -10,6 +10,7 @@ from hierarchy.core.node import Node
 from hierarchy.core.labour import Labour
 from hierarchy.core.synthesizer import synthesize
 from hierarchy.core.pool_allocator import PoolAllocator
+from hierarchy.core.peer_bus import PeerBus
 from hierarchy.events.bus import EventBus
 from hierarchy.providers.base import Provider
 from hierarchy.providers.errors import ProviderError
@@ -32,6 +33,7 @@ class Supervisor(Node):
         event_bus: Optional[EventBus] = None,
         registry: Optional[ModelRegistry] = None,
         pool_allocator: Optional[PoolAllocator] = None,
+        peer_bus: Optional[PeerBus] = None,
         system_prompt: Optional[str] = None,
         max_retries: int = 2,
     ):
@@ -45,6 +47,7 @@ class Supervisor(Node):
             provider=provider,
             event_bus=event_bus,
             registry=registry,
+            peer_bus=peer_bus,
         )
         self._pool_allocator = pool_allocator
         self._system_prompt = system_prompt
@@ -123,10 +126,13 @@ class Supervisor(Node):
         self.status = NodeState.synthesizing
         self.add_thought(f"Synthesizing {len(child_outputs)} outputs")
 
+        peer_notes = self.get_relevant_peer_notes(scope="parent", limit=5)
+
         synthesis = await synthesize(
             provider=self._provider,
             task_description=task_text,
             child_outputs=child_outputs,
+            peer_notes=peer_notes if peer_notes else None,
         )
 
         self.set_output(synthesis.merged_output)
@@ -149,7 +155,9 @@ class Supervisor(Node):
         content = result.get("content", "{}")
         try:
             data = json.loads(content)
-        except json.JSONDecodeError:
+            if "sub_tasks" not in data or "task_id" not in data:
+                raise ValueError("missing required keys")
+        except (json.JSONDecodeError, ValueError):
             data = {
                 "task_id": task,
                 "sub_tasks": [{
