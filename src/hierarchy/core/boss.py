@@ -17,6 +17,7 @@ from hierarchy.core.node import Node
 from hierarchy.core.manager import Manager
 from hierarchy.core.synthesizer import synthesize
 from hierarchy.core.pool_allocator import PoolAllocator
+from hierarchy.core.peer_bus import PeerBus
 from hierarchy.events.bus import EventBus
 from hierarchy.providers.base import Provider
 from hierarchy.registry.model_registry import ModelRegistry
@@ -37,6 +38,7 @@ class Boss(Node):
         event_bus: Optional[EventBus] = None,
         registry: Optional[ModelRegistry] = None,
         pool_allocator: Optional[PoolAllocator] = None,
+        peer_bus: Optional[PeerBus] = None,
         system_prompt: Optional[str] = None,
         max_retries: int = 2,
     ):
@@ -50,6 +52,7 @@ class Boss(Node):
             provider=provider,
             event_bus=event_bus,
             registry=registry,
+            peer_bus=peer_bus,
         )
         self._pool_allocator = pool_allocator
         self._system_prompt = system_prompt
@@ -84,6 +87,7 @@ class Boss(Node):
                 event_bus=self._event_bus,
                 registry=self._registry,
                 pool_allocator=self._pool_allocator,
+                peer_bus=self._peer_bus,
                 max_retries=self._max_retries,
             )
             managers.append(mgr)
@@ -148,7 +152,9 @@ class Boss(Node):
         content = result.get("content", "{}")
         try:
             data = json.loads(content)
-        except json.JSONDecodeError:
+            if "sub_tasks" not in data or "task_id" not in data:
+                raise ValueError("missing required keys")
+        except (json.JSONDecodeError, ValueError):
             data = {
                 "task_id": task,
                 "sub_tasks": [{
