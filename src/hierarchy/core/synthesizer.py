@@ -88,7 +88,9 @@ async def synthesize(
     import json
     try:
         data = json.loads(content)
-    except json.JSONDecodeError:
+        if "merged_output" not in data or "rationale" not in data:
+            raise ValueError("missing required keys")
+    except (json.JSONDecodeError, ValueError):
         data = {
             "merged_output": content,
             "rationale": "Unable to parse structured output",
