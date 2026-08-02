@@ -41,7 +41,8 @@ class EventBus:
 
     def emit(self, event: Event) -> None:
         self._history.append(event)
-        handlers = self._subscribers.get(event.type, [])
+        handlers = list(self._subscribers.get(event.type, []))
+        handlers.extend(self._subscribers.get("*", []))
         for handler in handlers:
             handler(event)
 
