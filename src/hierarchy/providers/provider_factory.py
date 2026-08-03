@@ -18,13 +18,10 @@ def create_provider(
     Args:
         model_spec: The model specification (provider type, tier, etc.)
         fault: Optional fault to inject (for mock provider testing)
-        canned_response: Optional canned response (for mock provider)
+        canned_response: Optional canned response (for mock)
 
     Returns:
         A Provider instance ready to make LLM calls.
-
-    Real providers (openai, anthropic, deepseek) return NotImplementedError
-    until Phase 11. The mock provider is always available for testing.
     """
     provider_type = model_spec.provider.lower()
 
@@ -35,21 +32,24 @@ def create_provider(
         )
 
     if provider_type == "openai":
-        raise NotImplementedError(
-            "OpenAI provider not yet implemented (Phase 11). "
-            "Use provider='mock' for testing."
+        from .openai_provider import OpenAIProvider
+        return OpenAIProvider(
+            model_id=model_spec.id,
+            api_key_env=model_spec.api_key_env,
         )
 
     if provider_type == "anthropic":
-        raise NotImplementedError(
-            "Anthropic provider not yet implemented (Phase 11). "
-            "Use provider='mock' for testing."
+        from .anthropic_provider import AnthropicProvider
+        return AnthropicProvider(
+            model_id=model_spec.id,
+            api_key_env=model_spec.api_key_env,
         )
 
     if provider_type == "deepseek":
-        raise NotImplementedError(
-            "DeepSeek provider not yet implemented (Phase 11). "
-            "Use provider='mock' for testing."
+        from .deepseek_provider import DeepSeekProvider
+        return DeepSeekProvider(
+            model_id=model_spec.id,
+            api_key_env=model_spec.api_key_env,
         )
 
     raise ValueError(f"Unknown provider type: {provider_type}")
