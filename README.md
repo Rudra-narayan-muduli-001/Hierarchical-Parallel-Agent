@@ -1,35 +1,19 @@
-<div align="center">
-
 # 🧠 Parallel Mind 2.0
 
-### Self-Healing · Hierarchical · Multi-LLM Orchestration
+**Self-Healing · Hierarchical · Multi-LLM Orchestration**
 
-```
-   ▄▄▄▄▄▄▄▄▄▄▄
-  █   BOSS    █     One task in…
-  █▄▄▄▄▄▄▄▄▄▄█
-     │   │   │      …thousands of coordinated LLM calls out.
-   ██ ██ ████
-   ██ ██ ████
-   ██ ██ ████
-```
-
-**Boss → Manager → Supervisor → Labour** — a chain of command where every link can fail, and every failure is healed automatically.
-
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)]()
-[![Version](https://img.shields.io/badge/Version-0.1.0-blue?style=for-the-badge)]()
-[![Tests](https://img.shields.io/badge/Tests-122%20passed-brightgreen?style=for-the-badge)]()
-[![Model Count](https://img.shields.io/badge/Models-3%20mock%20%2B%203%20real-purple?style=for-the-badge)]()
-
-</div>
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/Version-0.1.0-blue?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-122%20passed-brightgreen?style=flat-square)]()
+[![Models](https://img.shields.io/badge/Models-3%20mock%20%2B%203%20real-purple?style=flat-square)]()
 
 ---
 
-## ✨ What Is This?
+## What Is This?
 
 Parallel Mind is an **orchestrator for teams of LLMs**. You submit a single task —
 it gets classified, decomposed, and delegated down a four-rank hierarchy. Each rank
@@ -43,43 +27,43 @@ The system is **self-healing**: when any model times out, rate-limits, or errors
 the parent rank automatically swaps in a replacement — all the way up to a
 **Boss Election** if the Boss itself dies.
 
-> 🛡️ **Zero API cost to try it.** The default config ships with 3 deterministic
+> **Zero API cost to try it.** The default config ships with 3 deterministic
 > mock models that work end-to-end with fault injection, so you can demo the entire
 > failover machinery for free before plugging in real providers.
 
 ---
 
-## 🏛️ Architecture
+## Architecture
 
 ```
-                ┌──────────────────────────────┐
-                │        TASK ROUTER          │   classifies task → category
-                └──────────────┬───────────────┘
-                               ▼
-                    ┌───────────────────┐
-                    │    BOSS (tier S)  │  decomposes, assigns complexity tiers
-                    └────────┬──────────┘
-                             │
-        ┌────────────────────┼────────────────────┐
-        ▼                    ▼                    ▼
-  ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-  │ Manager A   │      │ Manager B   │      │ Manager C   │   tier A/B
-  └──────┬──────┘      └──────┬──────┘      └──────┬──────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-  ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-  │ Supervisor  │      │ Supervisor  │      │ Supervisor  │   tier B/C
-  └──────┬──────┘      └──────┬──────┘      └──────┬──────┘
-         │                    │                    │
-         ▼                    ▼                    ▼
-  ┌─────────────┐      ┌─────────────┐      ┌─────────────┐
-  │ Labour      │      │ Labour      │      │ Labour      │   tier C/D
-  └─────────────┘      └─────────────┘      └─────────────┘
+TASK ROUTER (classifies task → category)
+        │
+        ▼
+    ┌─────────┐
+    │  BOSS   │  (tier S) — decomposes, assigns complexity tiers
+    └────┬────┘
          │
-         ▼
-  ┌─────────────┐      🛠️  MCP Worker Pools (research category)
-  │ Pool Worker │      🔍 Search · 🌐 Browser · 💻 Code · 📁 Files
-  └─────────────┘
+    ┌────┼────┐
+    ▼    ▼    ▼
+┌────────┐ ┌────────┐ ┌────────┐
+│Manager │ │Manager │ │Manager │  (tier A/B)
+└────┬───┘ └────┬───┘ └────┬───┘
+     │          │          │
+     ▼          ▼          ▼
+┌──────────┐ ┌──────────┐ ┌──────────┐
+│Supervisor│ │Supervisor│ │Supervisor│  (tier B/C)
+└────┬─────┘ └────┬─────┘ └────┬─────┘
+     │            │            │
+     ▼            ▼            ▼
+┌────────┐  ┌────────┐  ┌────────┐
+│Labour  │  │Labour  │  │Labour  │  (tier C/D)
+└────┬───┘  └────┬───┘  └────┬───┘
+     │           │           │
+     ▼           ▼           ▼
+┌──────────────────────────────────────────┐
+│        MCP Worker Pools (research)       │
+│  🔍 Search  ·  🌐 Browser  ·  💻 Code  ·  📁 Files
+└──────────────────────────────────────────┘
 ```
 
 **Every rank is the same class** — Boss, Manager, Supervisor, and Labour share one
@@ -87,39 +71,38 @@ the parent rank automatically swaps in a replacement — all the way up to a
 
 ---
 
-## 🚀 Key Features
+## Key Features
 
-| | | |
-|---|---|---|
-| 🎚️ **Four-tier hierarchy** | S/A/B/C/D model tiers | complexity-gated model allocation |
-| 🔁 **Automatic failover** | Labour→Supervisor→Manager→Boss | retries, backoff, model swaps at every rank |
-| 🗂️ **Pool allocation** | Exclusion rules + reuse fallback | never two siblings on the same model |
-| 🗳️ **Boss election** | Managers vote via LLM | the hierarchy heals its own head |
-| 💬 **Peer communication** | Rank + sibling channels | supervisors warn each other about overlap |
-| 🧰 **MCP worker pools** | Firecrawl, Playwright, code_exec, filesystem | InfoSeeker-compatible labour variants |
-| 📊 **Live GUI** | React + WebSocket event stream | watch the tree think, fail, and heal in real time |
-| 💰 **Cost tracking** | Per-node & per-task accounting | token/cost summary on completion |
-| 💾 **Resumable** | SQLite event log | replay any task from its last snapshot |
-| 🧪 **Mock-first** | Deterministic fault injection | full failover testing with zero API spend |
+| Feature | Detail | Benefit |
+|---------|--------|---------|
+| 🎚️ Four-tier hierarchy | S / A / B / C / D model tiers | Complexity-gated model allocation |
+| 🔁 Automatic failover | Labour → Supervisor → Manager → Boss | Retries, backoff, model swaps at every rank |
+| 🗂️ Pool allocation | Exclusion rules + reuse fallback | Never two siblings on the same model |
+| 🗳️ Boss election | Managers vote via LLM | The hierarchy heals its own head |
+| 💬 Peer communication | Rank + sibling channels | Supervisors warn each other about overlap |
+| 🧰 MCP worker pools | Firecrawl, Playwright, code_exec, filesystem | InfoSeeker-compatible labour variants |
+| 📊 Live GUI | React + WebSocket event stream | Watch the tree think, fail, and heal in real time |
+| 💰 Cost tracking | Per-node & per-task accounting | Token/cost summary on completion |
+| 💾 Resumable | SQLite event log | Replay any task from its last snapshot |
+| 🧪 Mock-first | Deterministic fault injection | Full failover testing with zero API spend |
 
 ---
 
-## 🚦 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- 🐍 **Python 3.11+** (tested on 3.12)
-- 🟢 **Node.js 18+** & **npm** (for the GUI)
+- **Python 3.11+** (tested on 3.12)
+- **Node.js 18+** & **npm** (for the GUI)
 
-### 1️⃣ Install
+### 1. Install
 
 ```bash
 pip install -r requirements.txt
-
 cd gui && npm install && cd ..
 ```
 
-### 2️⃣ Configure
+### 2. Configure
 
 Add API keys to `.env` at the repo root (copy from `.env.example`):
 
@@ -130,30 +113,29 @@ DEEPSEEK_API_KEY=...
 FIRECRAWL_API_KEY=...
 ```
 
-> 💡 **No keys? No problem.** The default config uses 3 mock models
+> **No keys? No problem.** The default config uses 3 mock models
 > (`mock-super`, `mock-mid`, `mock-cheap`) — real providers activate the moment
 > you reference them in `config/config.yaml`.
 
-### 3️⃣ Start the backend
+### 3. Start the Backend
 
+**Windows PowerShell**
 ```powershell
-# Windows PowerShell
 $env:PYTHONPATH="src"
 python -m uvicorn hierarchy.api.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
+**Linux / macOS**
 ```bash
-# Linux / macOS
 PYTHONPATH=src python -m uvicorn hierarchy.api.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Verify it's live:
-
 ```bash
 curl http://localhost:8000/api/config
 ```
 
-### 4️⃣ Start the GUI
+### 4. Start the GUI
 
 ```bash
 cd gui && npm run dev
@@ -161,44 +143,44 @@ cd gui && npm run dev
 
 Open **http://localhost:3000** — the Vite server proxies `/api/*` to port 8000.
 
-### 5️⃣ …or use the CLI
+### 5. Or Use the CLI
 
+**Windows PowerShell**
 ```powershell
-# Windows PowerShell
 $env:PYTHONPATH="src"
 python -m hierarchy.cli.main "Implement a binary search tree" --category coding
 ```
 
+**Linux / macOS**
 ```bash
-# Linux / macOS
 PYTHONPATH=src python -m hierarchy.cli.main "Implement a binary search tree" --category coding
 ```
 
 ---
 
-## 🧪 Testing
+## Testing
 
 All **122 tests** run offline against the mock provider — no API keys, no network.
 
+**Windows PowerShell**
 ```powershell
-# Windows PowerShell
 $env:PYTHONPATH="src"
 python -m pytest tests/ -v
 ```
 
+**Linux / macOS**
 ```bash
-# Linux / macOS
 PYTHONPATH=src python -m pytest tests/ -v
 ```
 
 | Suite | Count | Covers |
 |-------|-------|--------|
-| 🧩 Unit | **114** | config, schemas, providers, pool allocator, failover, synthesizer, peer bus, cost tracker, event store, node lifecycle, hierarchy, boss election, router |
-| 🔀 Integration | **8** | full-tree success, labour timeout swap, supervisor/manager API-error swap, boss failure election, 60% failure warning, single-model degraded fallback, zero-model hard failure |
+| Unit | 114 | Config, schemas, providers, pool allocator, failover, synthesizer, peer bus, cost tracker, event store, node lifecycle, hierarchy, boss election, router |
+| Integration | 8 | Full-tree success, labour timeout swap, supervisor/manager API-error swap, boss failure election, 60% failure warning, single-model degraded fallback, zero-model hard failure |
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 parallel-mind-2.0/
@@ -234,7 +216,7 @@ parallel-mind-2.0/
 
 ---
 
-## ⚙️ Configuration Reference
+## Configuration Reference
 
 ```yaml
 tiers:
@@ -274,15 +256,15 @@ behavior:
 
 ---
 
-## 🌐 API Endpoints
+## API Endpoints
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| 🟢 POST | `/api/tasks` | Submit task → final output + cost |
-| 🔵 GET  | `/api/tasks/{id}` | Get task status |
-| 🔵 GET  | `/api/tasks/{id}/tree` | Get full node tree |
-| 🔵 GET  | `/api/config` | Sanitized config (no secrets) |
-| 🟣 WS   | `/api/ws/tasks/{id}` | Live event stream for the GUI |
+| POST | `/api/tasks` | Submit task → final output + cost |
+| GET  | `/api/tasks/{id}` | Get task status |
+| GET  | `/api/tasks/{id}/tree` | Get full node tree |
+| GET  | `/api/config` | Sanitized config (no secrets) |
+| WS   | `/api/ws/tasks/{id}` | Live event stream for the GUI |
 
 ```bash
 curl -X POST http://localhost:8000/api/tasks \
@@ -292,35 +274,35 @@ curl -X POST http://localhost:8000/api/tasks \
 
 ---
 
-## 📡 Event Types (GUI Contract)
+## Event Types (GUI Contract)
 
 The WebSocket bus is the single source of truth — the GUI is a pure renderer of
 this stream:
 
 ```
-node_created          { node_id, role, category, tier, model_id, parent_id }
-node_status_changed   { node_id, old_status, new_status }
-node_thought          { node_id, text }
-node_output           { node_id, output }
-node_error            { node_id, error_type, message }
-node_replaced         { node_id, old_model_id, new_model_id, reason }
-node_reused_model     { node_id, model_id }
-peer_message          { from_node_id, scope, text }
-task_warning          { task_id, kind: "failure_threshold", failure_percent }
-task_degraded         { task_id, kind: "single_model" | "hierarchy_unstable" }
-task_completed        { task_id, final_output, cost_summary }
-task_failed           { task_id, reason: "zero_models_available" }
-boss_election_started { category, candidate_manager_ids }
-boss_election_result  { category, new_boss_node_id }
-worker_pool_created   { node_id, pool_type, pool_size }
-worker_task_started   { node_id, worker_id, subtask_index }
-worker_task_completed { node_id, worker_id, subtask_index }
-worker_task_failed    { node_id, worker_id, subtask_index, error }
+node_created           { node_id, role, category, tier, model_id, parent_id }
+node_status_changed    { node_id, old_status, new_status }
+node_thought           { node_id, text }
+node_output            { node_id, output }
+node_error             { node_id, error_type, message }
+node_replaced          { node_id, old_model_id, new_model_id, reason }
+node_reused_model      { node_id, model_id }
+peer_message           { from_node_id, scope, text }
+task_warning           { task_id, kind: "failure_threshold", failure_percent }
+task_degraded          { task_id, kind: "single_model" | "hierarchy_unstable" }
+task_completed         { task_id, final_output, cost_summary }
+task_failed            { task_id, reason: "zero_models_available" }
+boss_election_started  { category, candidate_manager_ids }
+boss_election_result   { category, new_boss_node_id }
+worker_pool_created    { node_id, pool_type, pool_size }
+worker_task_started    { node_id, worker_id, subtask_index }
+worker_task_completed  { node_id, worker_id, subtask_index }
+worker_task_failed     { node_id, worker_id, subtask_index, error }
 ```
 
 ---
 
-## 🗺️ Build Phases
+## Build Phases
 
 Built in 15 incremental phases (full spec in `AGENTS.md`):
 
@@ -346,12 +328,7 @@ Built in 15 incremental phases (full spec in `AGENTS.md`):
 
 ---
 
-<div align="center">
-
-## 🧠 *"A single model is a single point of failure."*
-
-**Parallel Mind 2.0** — when one mind isn't enough, build a parliament.
-
-MIT License
-
-</div>
+> *"A single model is a single point of failure."*
+>
+> **Parallel Mind 2.0** — when one mind isn't enough, build a parliament.
+>
