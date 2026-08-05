@@ -102,9 +102,11 @@ class TestProviderFactory:
             create_provider(ms)
 
     def test_factory_openai_not_implemented(self):
+        """OpenAI provider is now implemented (Phase 11); verify it instantiates."""
+        from hierarchy.providers.openai_provider import OpenAIProvider
         ms = ModelSpec(
             id="o", provider="openai", tier="S",
             context_window=1000, api_key_env="K",
         )
-        with pytest.raises(NotImplementedError):
-            create_provider(ms)
+        prov = create_provider(ms)
+        assert isinstance(prov, OpenAIProvider)
