@@ -45,6 +45,21 @@ export interface TaskSubmitResponse {
   cost_summary: Record<string, any>;
 }
 
+export type MessageStatus = 'sending' | 'running' | 'done' | 'error';
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  status: MessageStatus;
+  taskId?: string;
+  category?: string;
+  confidence?: number;
+  cost?: Record<string, any>;
+  error?: string;
+  ts: string;
+}
+
 export interface TaskStatusResponse {
   task_id: string;
   status: string;
