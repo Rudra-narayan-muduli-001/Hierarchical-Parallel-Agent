@@ -1,62 +1,107 @@
 import { useTreeStore } from '../state/treeStore';
 import { Node } from '../state/types';
+import { MarkdownViewer } from './MarkdownViewer';
+import { CloseIcon, NetworkIcon } from './icons';
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="stat">
+      <span className="stat-label">{label}</span>
+      <span className="stat-value ellipsis" title={value}>{value}</span>
+    </div>
+  );
+}
 
 export function NodeDetailPanel() {
-  const { selectedNode, nodeOutputs } = useTreeStore();
-  const node = selectedNode as (Node & { output?: string }) | null;
+  const { selectedNode, nodeOutputs, selectNode, nodes } = useTreeStore();
+  const node = selectedNode as Node | null;
 
   if (!node) {
+    const active = nodes.filter(n => n.status === 'executing' || n.status === 'running');
     return (
-      <div className="detail-panel">
-        <h3>Node Detail</h3>
-        <p className="empty-detail">Click a node in the tree to view details.</p>
+      <div className="detail-panel detail-panel-empty">
+        <div className="detail-empty-inner">
+          <NetworkIcon size={26} />
+          <div>
+            <h4 style={{ marginBottom: 4 }}>Inspector</h4>
+            <p>Pick a node in the tree to inspect thoughts, output and live state.</p>
+          </div>
+        </div>
+        {active.length > 0 && (
+          <div>
+            <div className="panel-title" style={{ paddingLeft: 0 }}>Currently Running</div>
+            <div className="assistant-stream">
+              {active.slice(0, 6).map(n => (
+                <button key={n.id} className="stream-row" onClick={() => selectNode(n.id)}>
+                  <span className={`role-chip role-${n.role}`}>{n.role}</span>
+                  <span className="stream-id">{n.id}</span>
+                  <span className="stream-state">{n.status}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
-  const output = nodeOutputs[node.id] || node.output || 'No output yet.';
+  const liveOutput = nodeOutputs[node.id];
+  const output = liveOutput ?? node.output ?? '';
 
   return (
     <div className="detail-panel">
-      <h3>Node: {node.id}</h3>
-      <div className="detail-section">
-        <h4>Basic Info</h4>
-        <dl>
-          <dt>Role</dt><dd>{node.role}</dd>
-          <dt>Category</dt><dd>{node.category}</dd>
-          <dt>Tier</dt><dd>{node.tier}</dd>
-          <dt>Model</dt><dd>{node.model_id}</dd>
-          <dt>Status</dt><dd>{node.status}</dd>
-          <dt>Reused</dt><dd>{node.reused ? 'Yes' : 'No'}</dd>
-          <dt>Retries</dt><dd>{node.retries}</dd>
-          <dt>Parent</dt><dd>{node.parent_id || 'None (Root)'}</dd>
-        </dl>
+      <div className="detail-head">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+          <div className="detail-badges">
+            <span className={`role-chip role-${node.role}`}>{node.role}</span>
+            <span className="task-chip">{node.tier}</span>
+          </div>
+          <button className="icon-btn-sm" onClick={() => selectNode(null as any)} title="Close">
+            <CloseIcon size={14} />
+          </button>
+        </div>
+        <div className="detail-id ellipsis" title={node.id}>{node.id}</div>
       </div>
 
-      <div className="detail-section">
-        <h4>Thought Stream</h4>
-        <div className="thought-stream">
-          {node.thought_stream && node.thought_stream.length > 0 ? (
-            node.thought_stream.map((t: any, i: number) => (
+      <div className="stat-grid">
+        <Stat label="Status" value={node.status} />
+        <Stat label="Model" value={node.model_id || '—'} />
+        <Stat label="Retries" value={String(node.retries ?? 0)} />
+        <Stat label="Reused" value={node.reused ? 'yes' : 'no'} />
+        <Stat label="Parent" value={node.parent_id || 'root'} />
+        <Stat label="Category" value={node.category || '—'} />
+      </div>
+
+      <div>
+        <div className="panel-title">Output</div>
+        {output ? (
+          <MarkdownViewer content={output} />
+        ) : (
+          <p className="no-messages">No output yet.</p>
+        )}
+      </div>
+
+      <div>
+        <div className="panel-title">Thought Stream</div>
+        {node.thought_stream && node.thought_stream.length > 0 ? (
+          <div className="thought-stream">
+            {node.thought_stream.map((t: any, i: number) => (
               <div key={i} className="thought-entry">
-                <span className="thought-time">{new Date(t.ts).toLocaleTimeString()}</span>
+                <span className="thought-time">
+                  {new Date(t.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
                 <span className="thought-text">{t.text}</span>
               </div>
-            ))
-          ) : (
-            <p className="no-thoughts">No thoughts recorded.</p>
-          )}
-        </div>
-      </div>
-
-      <div className="detail-section">
-        <h4>Output</h4>
-        <pre className="output-block">{output}</pre>
+            ))}
+          </div>
+        ) : (
+          <p className="no-thoughts">No thoughts recorded.</p>
+        )}
       </div>
 
       {node.error && (
-        <div className="detail-section error">
-          <h4>Error</h4>
+        <div>
+          <div className="panel-title" style={{ color: 'var(--error)' }}>Error</div>
           <pre className="error-block">{node.error}</pre>
         </div>
       )}
