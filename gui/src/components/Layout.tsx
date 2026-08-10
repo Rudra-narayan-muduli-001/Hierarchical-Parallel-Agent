@@ -1,30 +1,35 @@
-import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { TreeView } from './TreeView';
 import { NodeDetailPanel } from './NodeDetailPanel';
 import { PeerChatOverlay } from './PeerChatOverlay';
 import { WarningBanner } from './WarningBanner';
-import { TaskSubmitForm } from './TaskSubmitForm';
+import { ChatThread } from './ChatThread';
+import { ChatComposer } from './ChatComposer';
 import { useTreeStore } from '../state/treeStore';
 
 export function Layout() {
   const { wsConnected } = useTreeStore();
+
   return (
-    <div className="app-layout">
+    <div className="app">
       <Header wsConnected={wsConnected} />
-      <div className="main-container">
+
+      <div className="app-body">
         <aside className="sidebar">
-          <TaskSubmitForm />
+          <TreeView />
           <WarningBanner />
         </aside>
-        <main className="main-content">
-          <TreeView />
-          <Outlet />
+
+        <main className="chat-main">
+          <ChatThread />
+          <ChatComposer />
         </main>
-        <aside className="detail-panel">
+
+        <aside className="inspector">
           <NodeDetailPanel />
         </aside>
       </div>
+
       <PeerChatOverlay />
     </div>
   );
