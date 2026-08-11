@@ -26,7 +26,21 @@ class MockProvider(Provider):
     ):
         self.canned_response = canned_response or {
             "role": "assistant",
-            "content": json.dumps({"result": "mock output", "confidence": 1.0}),
+            "content": json.dumps({
+                "merged_output": (
+                    "Hello! This is a mock response from the Parallel Mind "
+                    "hierarchy. The Boss → Manager → Supervisor → Labour "
+                    "tree executed successfully. To see real answers, "
+                    "configure a real provider in `config/config.yaml` and "
+                    "set the matching API key in your `.env` file."
+                ),
+                "rationale": (
+                    "Mock synthesis — combines worker outputs into a single "
+                    "coherent answer. Replace the mock provider with a real "
+                    "one to stream actual model responses."
+                ),
+                "confidence": 0.82,
+            }),
         }
         self.fault = fault
         self._structured_output_schema = structured_output_schema
