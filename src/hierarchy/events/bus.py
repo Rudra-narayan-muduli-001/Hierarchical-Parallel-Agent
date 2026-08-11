@@ -27,6 +27,7 @@ class EventBus:
     def __init__(self):
         self._subscribers: Dict[str, List[EventHandler]] = {}
         self._history: List[Event] = []
+        self._nodes: Dict[str, Any] = {}
         self._lock = asyncio.Lock()
 
     def subscribe(self, event_type: str, handler: EventHandler) -> None:
@@ -50,6 +51,22 @@ class EventBus:
     def history(self) -> List[Event]:
         return list(self._history)
 
+    def register_node(self, node: Any) -> None:
+        """Track a live node so the API can serve current tree snapshots.
+
+        The node is re-snapshotted on demand via ``snapshot_tree``, keeping
+        status/output/thoughts fresh without extra emit traffic.
+        """
+        self._nodes[node.id] = node
+
+    def snapshot_tree(self) -> List[dict]:
+        """Return current JSON snapshots of every tracked node."""
+        return [
+            n.snapshot().model_dump(mode="json")
+            for n in self._nodes.values()
+        ]
+
     def clear(self) -> None:
         self._history.clear()
         self._subscribers.clear()
+        self._nodes.clear()
