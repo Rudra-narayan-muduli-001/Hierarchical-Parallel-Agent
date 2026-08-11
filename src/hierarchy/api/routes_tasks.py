@@ -14,6 +14,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from hierarchy.core.orchestrator import Orchestrator
+from hierarchy.api.ws import register_bus
 
 router = APIRouter()
 
@@ -46,6 +47,7 @@ async def submit_task(req: TaskSubmitRequest):
     category = req.category or "coding"
     orch = Orchestrator(task_id=task_id, config_path="config/config.yaml")
     _running_orchestrators[task_id] = orch
+    register_bus(task_id, orch.event_bus)
 
     result = await orch.run_task(task_text=req.task, category=category)
 
@@ -69,4 +71,4 @@ async def get_task_tree(task_id: str):
     if task_id not in _running_orchestrators:
         raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
     orch = _running_orchestrators[task_id]
-    return {"task_id": task_id, "nodes": []}
+    return {"task_id": task_id, "nodes": orch.event_bus.snapshot_tree()}
