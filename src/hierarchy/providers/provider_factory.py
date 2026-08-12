@@ -52,4 +52,25 @@ def create_provider(
             api_key_env=model_spec.api_key_env,
         )
 
+    if provider_type == "groq":
+        from .groq_provider import GroqProvider
+        return GroqProvider(
+            model_id=model_spec.id,
+            api_key_env=model_spec.api_key_env,
+        )
+
+    if provider_type in ("nvidia", "nvidia_nim", "nim"):
+        from .nvidia_provider import NVIDIAProvider
+        return NVIDIAProvider(
+            model_id=model_spec.id,
+            api_key_env=model_spec.api_key_env,
+        )
+
+    if provider_type in ("opencode_zen", "opencodezen", "zen"):
+        from .opencode_zen_provider import OpenCodeZenProvider
+        return OpenCodeZenProvider(
+            model_id=model_spec.id,
+            api_key_env=model_spec.api_key_env,
+        )
+
     raise ValueError(f"Unknown provider type: {provider_type}")
