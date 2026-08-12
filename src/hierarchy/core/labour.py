@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from hierarchy.core.node import Node
 from hierarchy.core.context_budget import ContextBudget
+from hierarchy.core.jsonutil import loads_json
 from hierarchy.providers.base import Provider
 from hierarchy.providers.errors import ProviderError
 from hierarchy.schemas.node_state import NodeState
@@ -117,4 +118,8 @@ class Labour(Node):
                 if isinstance(c, dict) and c.get("type") == "text"
             ]
             return "\n".join(parts)
-        return str(content)
+        text = str(content)
+        parsed = loads_json(text)
+        if parsed is not None and isinstance(parsed.get("merged_output"), str):
+            return parsed["merged_output"]
+        return text
