@@ -18,6 +18,7 @@ from typing import Dict, List, Optional
 
 from hierarchy.providers.base import Provider
 from hierarchy.schemas.synthesis import SynthesisResult, ChildOutput
+from hierarchy.core.jsonutil import loads_json
 
 
 async def synthesize(
@@ -41,9 +42,12 @@ async def synthesize(
     """
     children_text = ""
     for i, child in enumerate(child_outputs):
+        output = str(child.get("output", ""))
+        if len(output) > 800:
+            output = output[:800] + "…[truncated]"
         children_text += (
             f"Child {i+1} ({child.get('node_id', 'unknown')}):\n"
-            f"  Output: {child.get('output', '')}\n"
+            f"  Output: {output}\n"
             f"  Confidence: {child.get('confidence', 0.5)}\n"
             f"  Caveats: {child.get('caveats', 'none')}\n\n"
         )
@@ -74,23 +78,21 @@ async def synthesize(
                 "merge them into one coherent result. "
                 "Reconcile contradictions, discard low-confidence/erroneous "
                 "output, and produce a single merged result with rationale. "
-                "Output must be valid JSON with keys: "
+                "Output ONLY a JSON object with keys: "
                 "'merged_output' (string), 'rationale' (string), "
-                "'confidence' (float between O and 1)."
+                "'confidence' (float between 0 and 1). No markdown, no prose."
             ),
         },
         {"role": "user", "content": prompt},
     ]
 
-    result = await provider.complete(messages)
+    result = await provider.complete(messages, json_mode=True)
     content = result.get("content", "")
 
-    import json
-    try:
-        data = json.loads(content)
-        if "merged_output" not in data or "rationale" not in data:
-            raise ValueError("missing required keys")
-    except (json.JSONDecodeError, ValueError):
+    data = loads_json(content)
+    merged = data.get("merged_output") if isinstance(data, dict) else None
+    rationale = data.get("rationale") if isinstance(data, dict) else None
+    if not isinstance(merged, str) or not merged.strip() or not isinstance(rationale, str):
         data = {
             "merged_output": content,
             "rationale": "Unable to parse structured output",
