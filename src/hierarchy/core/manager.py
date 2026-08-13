@@ -3,12 +3,12 @@
 from __future__ import annotations
 
 import asyncio
-import json
 from typing import Any, Dict, List, Optional
 
 from hierarchy.core.node import Node
 from hierarchy.core.supervisor import Supervisor
 from hierarchy.core.synthesizer import synthesize
+from hierarchy.core.jsonutil import loads_json
 from hierarchy.core.pool_allocator import PoolAllocator
 from hierarchy.core.peer_bus import PeerBus
 from hierarchy.events.bus import EventBus
@@ -131,18 +131,15 @@ class Manager(Node):
 
     async def _decompose(self, task: str) -> DecompositionPlan:
         prompt = (
-            f'Decompose this task into subtasks for Supervisors: "{task}". '
+            f'Decompose this task into at most 3 subtasks for Supervisors: "{task}". '
             f"Output valid JSON with keys: task_id (str), sub_tasks "
             f'(list of {{"id": str, "description": str, "assigned_tier": str, "assigned_role": str}}).'
         )
         messages = [{"role": "user", "content": prompt}]
-        result = await self._provider.complete(messages)
+        result = await self._provider.complete(messages, json_mode=True)
         content = result.get("content", "{}")
-        try:
-            data = json.loads(content)
-            if "sub_tasks" not in data or "task_id" not in data:
-                raise ValueError("missing required keys")
-        except (json.JSONDecodeError, ValueError):
+        data = loads_json(content)
+        if data is None or "sub_tasks" not in data or "task_id" not in data:
             data = {
                 "task_id": task,
                 "sub_tasks": [{
@@ -150,4 +147,12 @@ class Manager(Node):
                     "assigned_tier": "B", "assigned_role": "supervisor",
                 }],
             }
+        data["sub_tasks"] = [
+            s for s in data.get("sub_tasks", [])[:3]
+            if isinstance(s, dict)
+            and all(
+                isinstance(s.get(k), str) and s.get(k)
+                for k in ("id", "description", "assigned_tier", "assigned_role")
+            )
+        ]
         return DecompositionPlan(**data)
