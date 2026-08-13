@@ -71,6 +71,9 @@ class Node(ABC):
         self._created_at = datetime.now(timezone.utc)
         self._updated_at = self._created_at
 
+        if self._event_bus is not None:
+            self._event_bus.register_node(self)
+
         self._emit(node_created(
             node_id=self.id,
             role=self.role,
