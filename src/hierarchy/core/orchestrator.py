@@ -25,6 +25,7 @@ from hierarchy.core.pool_allocator import PoolAllocator
 from hierarchy.events.bus import EventBus
 from hierarchy.events.store import EventStore
 from hierarchy.providers.base import Provider
+from hierarchy.providers.errors import ProviderError
 from hierarchy.providers.provider_factory import create_provider
 from hierarchy.registry.model_registry import ModelRegistry
 from hierarchy.router.task_router import TaskRouter
@@ -158,7 +159,23 @@ class Orchestrator:
             completion_tokens=0,
         )
 
-        result = await boss_node.run({"task": task_text})
+        try:
+            result = await boss_node.run({"task": task_text})
+        except ProviderError as e:
+            output = f"Task failed: {e}"
+            self.event_bus.emit(task_failed(self.task_id, str(e)))
+            return {
+                "output": output,
+                "confidence": 0.0,
+                "cost_summary": {
+                    "total_tokens": 0,
+                    "estimated_cost": 0.0,
+                    "nodes": 0,
+                    "calls": 0,
+                },
+                "error": str(e),
+            }
+
         output = result.get("output", str(result))
 
         total_cost = self.cost_tracker.get_task_total()
