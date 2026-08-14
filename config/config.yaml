@@ -3,10 +3,10 @@ tiers:
 
 categories:
   coding:
-    boss_model: mock-super
+    boss_model: llama-3.1-8b-instant
     boss_system_prompt: prompts/boss/coding_boss.md
   research:
-    boss_model: mock-super
+    boss_model: llama-3.1-8b-instant
     boss_system_prompt: prompts/boss/research_boss.md
     worker_pools:
       search:
@@ -19,24 +19,52 @@ categories:
         pool_size: 1
 
 models:
-  - id: mock-super
-    provider: mock
+  - id: llama-3.1-8b-instant
+    provider: groq
     tier: S
-    context_window: 128000
-    api_key_env: MOCK_API_KEY
-    rate_limit_rpm: 1000
-  - id: mock-mid
-    provider: mock
+    context_window: 131072
+    api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
+  - id: qwen/qwen3.6-27b
+    provider: groq
     tier: B
-    context_window: 64000
-    api_key_env: MOCK_API_KEY
-    rate_limit_rpm: 1000
-  - id: mock-cheap
-    provider: mock
+    context_window: 131072
+    api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
+  - id: openai/gpt-oss-20b
+    provider: groq
     tier: D
-    context_window: 16000
-    api_key_env: MOCK_API_KEY
-    rate_limit_rpm: 1000
+    context_window: 131072
+    api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
+
+  # NVIDIA NIM (hosted build.nvidia.com) — set NVIDIA_API_KEY in .env to activate
+  # - id: nvidia/llama-3.3-nemotron-super-49b-v1
+  #   provider: nvidia
+  #   tier: S
+  #   context_window: 131072
+  #   api_key_env: NVIDIA_API_KEY
+  #   rate_limit_rpm: 60
+  # - id: meta/llama-3.3-70b-instruct
+  #   provider: nvidia
+  #   tier: A
+  #   context_window: 131072
+  #   api_key_env: NVIDIA_API_KEY
+  #   rate_limit_rpm: 60
+
+  # OpenCode Zen — set OPENCODE_API_KEY in .env to activate (free models available)
+  # - id: deepseek-v4-flash-free
+  #   provider: opencode_zen
+  #   tier: S
+  #   context_window: 131072
+  #   api_key_env: OPENCODE_API_KEY
+  #   rate_limit_rpm: 60
+  # - id: gpt-5.4-nano
+  #   provider: opencode_zen
+  #   tier: D
+  #   context_window: 131072
+  #   api_key_env: OPENCODE_API_KEY
+  #   rate_limit_rpm: 60
 
 failover:
   max_retries_per_node: 2
