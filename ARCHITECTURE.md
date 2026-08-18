@@ -64,9 +64,9 @@ All node activity is streamed to an **Event Bus**, consumed by the **GUI backend
 8. **Failover Manager** — detects error types (timeout/rate-limit vs generic API error vs total-exhaustion), executes the correct replacement rule per tier (§6), tracks failure %, raises warnings/degradation flags.
 9. **Reasoning/Synthesis Engine** — every non-leaf node's "merge children outputs" step is itself an LLM call with a dedicated synthesizer prompt (§7), not string concatenation.
 10. **Peer Communication Bus** — pub/sub channels scoped by `(category, rank)` and by `(parent_id)` for tighter sibling chat (§8).
-11. **Event Bus / State Store** — append-only event log + live in-memory tree, optionally persisted (SQLite/JSON) for crash-recovery and audit/history.
-12. **GUI Backend** — WebSocket/REST server exposing the live tree and event stream to the frontend.
-13. **GUI Frontend** — renders the tree, node detail panel (status, thoughts, output), warnings banner, degraded-hierarchy banner.
+11. **Event Bus / State Store** — async pub/sub bus (`events/bus.py`) with a node registry and tree-snapshot endpoint, plus an append-only JSONL event store (`events/store.py`) and SQLite persistence (`persistence/`) for crash-recovery and audit/history. Emits the event contract in §12b.
+12. **GUI Backend** — FastAPI REST (`POST /api/tasks`, `GET /api/tasks/{id}/tree`, `GET /api/config` — sanitized, no secrets) + WebSocket endpoint (`/ws`) streaming live `{type, data, ts}` events.
+13. **GUI Frontend** — Vite/React app rendering the tree, node detail panel (status, thoughts, output), peer chat overlay, warnings banner, degraded-hierarchy banner (see §11).
 
 ---
 
@@ -105,6 +105,8 @@ All node activity is streamed to an **Event Bus**, consumed by the **GUI backend
 | Manager | any API error | Boss **swaps the Manager's model**, keeping all Supervisors/Labours beneath it untouched. |
 | Boss | any API error | **No auto-swap.** The existing Managers of that category negotiate (a short structured vote/reasoning exchange) to elect one of themselves as the new Boss; the elected Manager is promoted, a new Manager is spawned to cover its old slot if needed. |
 
+**Provider-layer retries (before failover):** the OpenAI-compatible provider (`providers/openai_provider.py`, and every provider subclassing it) retries 429 rate-limit responses up to 3 times with backoff from the `retry-after` header (capped at 10s — some gateways send multi-minute values), maps 401 → `AuthError`, and 500/502/503 → `ApiError`. Failover per the table above only engages after these provider-level retries are exhausted.
+
 **Global resilience rules (apply everywhere):**
 - Never cancel the task on a single failure — always replace and retry the failed slot.
 - Each node gets `max_retries_per_node` (config, default 2) with exponential backoff before being marked dead-for-this-task.
@@ -137,41 +139,34 @@ Peer messages are short, structured (`from_id`, `to_scope`, `text`, `task_ref`),
 
 ```yaml
 tiers:
-  order: [S, A, B, C, D]     # S = highest
+  order: [S, A, B, C, D]           # S = highest
 
 categories:
   coding:
-    boss_model: deepseek-v4-pro
-    boss_system_prompt: prompts/coding_boss.md
-  math:
-    boss_model: gpt-5-pro
-    boss_system_prompt: prompts/math_boss.md
+    boss_model: llama-3.1-8b-instant
+    boss_system_prompt: prompts/boss/coding_boss.md
   research:
-    boss_model: claude-opus-x
-    boss_system_prompt: prompts/research_boss.md
+    boss_model: llama-3.1-8b-instant
+    boss_system_prompt: prompts/boss/research_boss.md
+    worker_pools:                 # MCP pools planned for research (§14, not yet wired)
+      search: { pool_size: 8 }
+      browser: { pool_size: 2 }
+      code: { pool_size: 1 }
+      filesystem: { pool_size: 1 }
 
 models:
-  - id: deepseek-v4-pro
-    provider: deepseek
+  - id: llama-3.1-8b-instant       # provider-agnostic id (may contain '/')
+    provider: groq                 # mock | openai | anthropic | deepseek | groq | nvidia | opencode_zen
     tier: S
-    context_window: 128000
-    api_key_env: DEEPSEEK_API_KEY
-    rate_limit_rpm: 60
-  - id: gpt-5-pro
-    provider: openai
-    tier: S
-    context_window: 256000
-    api_key_env: OPENAI_API_KEY
-  - id: some-mid-model
-    provider: mistral
-    tier: B
-    context_window: 32000
-    api_key_env: MISTRAL_API_KEY
-  - id: cheap-fast-model
+    context_window: 131072
+    api_key_env: GROQ_API_KEY      # key referenced by env var name, never stored in config
+    rate_limit_rpm: 30             # soft-throttle hint
+  - id: qwen/qwen3.6-27b
     provider: groq
-    tier: D
-    context_window: 8000
+    tier: B
+    context_window: 131072
     api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
 
 failover:
   max_retries_per_node: 2
@@ -180,7 +175,7 @@ failover:
   cooldown_after_failure_seconds: 300
 
 behavior:
-  continue_on_degraded: true      # auto-continue in single-model fallback
+  continue_on_degraded: true       # auto-continue in single-model fallback
   allow_model_reuse_on_pool_exhaustion: true
 ```
 
@@ -198,8 +193,6 @@ behavior:
   "reused": false,
   "parent_id": "mgr_1a2b",
   "children_ids": ["lab_01", "lab_02"],
-  "peer_group_id": "coding:supervisor",
-  "task": { "id": "t_77", "description": "...", "parent_task_id": "t_70" },
   "status": "synthesizing",
   "thought_stream": [
     { "ts": "...", "text": "Waiting on 2 labours..." },
@@ -207,12 +200,14 @@ behavior:
   ],
   "output": null,
   "error": null,
-  "replaced_history": [ { "from": "old-model", "reason": "timeout", "ts": "..." } ],
+  "replaced_history": [ { "from_model": "old-model", "to_model": "new-model", "reason": "timeout", "ts": "..." } ],
   "retries": 1,
   "created_at": "...",
   "updated_at": "..."
 }
 ```
+
+This mirrors `schemas/node_state.py` exactly (the GUI tree is rebuilt from these snapshots).
 
 Node `status` enum: `idle, assigned, thinking, executing, waiting_children, synthesizing, completed, failed, replaced, degraded`.
 
@@ -220,12 +215,14 @@ Node `status` enum: `idle, assigned, thinking, executing, waiting_children, synt
 
 ## 11. GUI Design
 
-- **Backend**: FastAPI + WebSocket, streaming Event Bus messages to connected clients; REST endpoints for task submission/history.
-- **Frontend**: React + a hierarchical graph renderer (e.g. Cytoscape.js / react-d3-tree), collapsible per branch.
-- **Tree view**: Boss at top, Managers/Supervisors/Labours as expandable children; color-coded by status (grey=idle, blue=thinking, yellow=executing, green=completed, orange=replaced, red=failed).
-- **Node detail panel**: click a node → live thought stream, current output, model in use, retry/replace history.
-- **Peer chat overlay**: toggle to show inter-node messages as chat bubbles between same-rank nodes.
-- **Top banner**: global warnings (≥60% failure), degraded-hierarchy notice, task progress %.
+- **Backend**: FastAPI (`api/server.py`) + WebSocket endpoint (`api/ws.py`) broadcasting Event Bus messages; REST: `POST /api/tasks` (submit), `GET /api/tasks/{id}/tree` (node snapshots), `GET /api/config` (sanitized — no secrets).
+- **Frontend**: Vite + React + TypeScript + zustand (`gui/`), plain CSS (no graph library). One WebSocket client (`api/ws.ts`) dispatches `{type, data, ts}` events into a zustand tree store (`state/treeStore.ts`) that mirrors the NodeSnapshot model.
+- **Layout** (`components/Layout.tsx`): left column = task list, center = active task view, right = node detail panel.
+- **TreeView** (`components/TreeView.tsx`): Boss at top, Managers/Supervisors/Labours as collapsible children; color-coded by status (idle/thinking/executing/waiting/synthesizing/completed/failed/replaced/degraded).
+- **NodeDetailPanel**: click a node → live thought stream, markdown-rendered output, model in use, retry/replace history.
+- **ChatThread + ChatComposer**: chat-style conversation with the user, answers rendered via `MarkdownViewer.tsx` (react-markdown + remark-gfm); composer lets you pick a category (or auto) and submit a task.
+- **PeerChatOverlay**: toggle to show `peer_message` events as chat bubbles between same-rank nodes.
+- **WarningBanner**: ≥60% failure warning, single-model degraded notice, task progress.
 
 ---
 
@@ -233,15 +230,44 @@ Node `status` enum: `idle, assigned, thinking, executing, waiting_children, synt
 
 These weren't explicitly specified but are necessary for the system to actually work well; decisions made in the project's favor:
 
-1. **Structured decomposition output** — all decomposition/synthesis calls use enforced JSON schema (function-calling/structured output) so the Orchestrator can reliably parse sub-tasks, tiers, and model choices instead of free-text parsing.
+1. **Structured JSON output (json_mode)** — every decomposition/synthesis/classification LLM call passes `response_format: json_object` (`json_mode=True`), and results are parsed with a tolerant parser (`core/jsonutil.py`: strips ``` fences, extracts the first `{...}` block) so control decisions never rely on free text. Decompositions are capped at 3 sub-tasks with required fields (`id`, `description`, `assigned_tier`, `assigned_role`) enforced by validation; synthesis child outputs are truncated to 800 chars per child before merging.
 2. **Context Budget Manager** — truncates/summarizes history and sibling outputs per node based on its model's context window, so large trees don't blow context limits.
-3. **Cost & token tracking** — every node call logs tokens/cost; aggregated per task and shown in GUI (useful since Boss/Manager tiers are expensive).
-4. **Persistence & resumability** — task tree + event log persisted (SQLite by default) so a crash of the orchestrator process doesn't lose an in-flight task; can resume from last consistent state.
+3. **Cost & token tracking** — every node call logs tokens/cost via a `TrackedProvider` wrapper (`telemetry/cost_tracker.py`); aggregated per task and shown in GUI (useful since Boss/Manager tiers are expensive).
+4. **Persistence & resumability** — task tree + event log persisted (SQLite via `persistence/`, JSONL via `events/store.py`) so a crash of the orchestrator process doesn't lose an in-flight task; can resume from last consistent state.
 5. **Security** — API keys only referenced via env var names in config, never stored/logged in plaintext; secrets redacted from event log/GUI.
 6. **Proactive rate-limit awareness** — optional `rate_limit_rpm` per model lets the Orchestrator soft-throttle before hitting real 429s, reducing reactive failovers.
 7. **Model reuse tagging** — anywhere diversity fallback triggers (§5.4), the GUI clearly marks it so users understand why the same model appears twice.
 8. **Dev/test harness** — a mock-provider mode purely for testing failover logic without burning API credits. This is a *developer tool*, not a user-facing execution mode — it doesn't violate the "single hierarchy mode" rule.
 9. **Boss-failure election** — kept lightweight: a short structured reasoning exchange between existing Managers (bounded turns) rather than an open-ended negotiation, to avoid stalling the task.
+10. **Provider-level 429 handling** — OpenAI-compatible providers retry rate-limit responses up to 3 times with backoff derived from `retry-after` (capped at 10s) before failover ever engages; 401 maps to `AuthError`, 5xx to `ApiError` (`providers/errors.py`).
+11. **Graceful task failure** — if no model survives (zero models available), the orchestrator emits `task_failed` and returns a structured error result instead of crashing the API.
+
+---
+
+## 12b. Event Contract (backend ↔ GUI)
+
+Every event is `{ "type": "...", "data": {...}, "ts": "<ISO-8601>" }`, defined in `schemas/events.py` — the single source of truth the GUI is built against:
+
+```
+node_created        { node_id, role, category, tier, model_id, parent_id }
+node_status_changed { node_id, old_status, new_status }
+node_thought        { node_id, text }
+node_output         { node_id, output }
+node_error          { node_id, error_type, message }
+node_replaced       { node_id, old_model_id, new_model_id, reason }
+node_reused_model   { node_id, model_id }
+peer_message        { from_node_id, scope, text }
+task_warning        { task_id, kind: "failure_threshold", failure_percent }
+task_degraded       { task_id, kind: "single_model" | "hierarchy_unstable" }
+task_completed      { task_id, final_output, cost_summary }
+task_failed         { task_id, reason: "zero_models_available" }
+boss_election_started { category, candidate_manager_ids }
+boss_election_result  { category, new_boss_node_id }
+worker_pool_created   { node_id, pool_type, pool_size }        # planned (§14)
+worker_task_started   { node_id, worker_id, subtask_index }    # planned (§14)
+worker_task_completed { node_id, worker_id, subtask_index }    # planned (§14)
+worker_task_failed    { node_id, worker_id, subtask_index, error }  # planned (§14)
+```
 
 ---
 
@@ -249,6 +275,9 @@ These weren't explicitly specified but are necessary for the system to actually 
 
 ### 14.1 Overview
 InfoSeeker (github.com/nj19257/InfoSeeker) is adapted into Parallel Mind as a set of **MCP-based worker pools** for the `research` category. The worker pool pattern enables massive parallelization (up to 40 concurrent workers) within a Supervisor's scope.
+
+> **Status (current):** the worker layer is implemented but **not yet wired into the hierarchy**.
+> `workers/*` (BaseMCPWorker, WorkerPool, and the four worker types), `config/mcp_servers.yaml`, and the worker/supervisor prompts all exist and are tested in isolation, but the bridge adapter (`core/worker_pool_adapter.py`) that connects a `WorkerPool` to the Node lifecycle does not exist yet — research Supervisors currently run standard LLM Labours. Pool integration and the worker events below are a planned next step.
 
 ### 14.2 Architecture
 
@@ -316,12 +345,12 @@ Research Boss (LLM tier S)
 ## 15. Tech Stack Summary
 
 - **Backend/Orchestrator**: Python (asyncio for parallel Labour execution), Pydantic for schemas.
-- **LLM access**: unified adapter layer per provider (OpenAI/Anthropic/DeepSeek/etc.), so swapping models is just changing an ID.
-- **Worker Pools (InfoSeeker integration)**: MCP (Model Context Protocol) via `mcp` SDK + `fastmcp`, subprocess isolation.
-- **Event Bus**: in-process async pub/sub (e.g. `asyncio.Queue` based), broadcast over WebSocket.
-- **Persistence**: SQLite (or JSON lines log) for task tree + event history.
+- **LLM access**: unified adapter layer per provider — `mock`, `openai`, `anthropic`, `deepseek`, `groq`, `nvidia` (NVIDIA NIM), `opencode_zen` — so swapping models is just changing an ID. All HTTP-based providers subclass the OpenAI-compatible provider and share its retry/error handling.
+- **Worker Pools (InfoSeeker integration)**: MCP (Model Context Protocol) via `mcp` SDK + `fastmcp`, subprocess isolation (implemented standalone, not yet wired — §14).
+- **Event Bus**: in-process async pub/sub with node registry + append-only JSONL event store, broadcast over WebSocket.
+- **Persistence**: SQLite (`persistence/`) for task/tree state + JSONL event log (`events/store.py`) for audit/resume.
 - **GUI backend**: FastAPI.
-- **GUI frontend**: React + Cytoscape.js (or react-d3-tree) + WebSocket client.
+- **GUI frontend**: Vite + React + TypeScript + zustand + react-markdown/remark-gfm, plain CSS, WebSocket client.
 - **Config**: YAML.
 
 ---
