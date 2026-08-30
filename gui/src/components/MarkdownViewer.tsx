@@ -1,19 +1,10 @@
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
-interface Props {
-  content: string;
-  className?: string;
-}
-
-/**
- * Renders markdown (incl. GFM tables/task lists) with the app's
- * dark design tokens applied via the .markdown-body stylesheet.
- */
-export function MarkdownViewer({ content, className = '' }: Props) {
+export function MarkdownViewer({ content }: { content: string }) {
   return (
-    <div className={`markdown-body ${className}`.trim()}>
+    <div className="markdown-body">
       <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
     </div>
-  );
+  )
 }
