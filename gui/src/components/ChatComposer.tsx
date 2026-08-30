@@ -1,104 +1,66 @@
-import { useEffect, useRef, useState } from 'react';
-import { useTreeStore } from '../state/treeStore';
-import { SendIcon, StopIcon, AlertIcon } from './icons';
-import { fetchConfig } from '../api/rest';
+import { useEffect, useState, useRef } from 'react'
+import { useTreeStore } from '../state/treeStore'
+import { SendIcon, AlertIcon } from './icons'
+
+const CATEGORIES = ['auto', 'coding', 'math', 'research', 'writing']
 
 export function ChatComposer() {
-  const { submitTask, activeTaskId, loading } = useTreeStore();
-  const [text, setText] = useState('');
-  const [category, setCategory] = useState('coding');
-  const [categories, setCategories] = useState<string[]>(['coding', 'research']);
-  const [error, setError] = useState<string | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { submitTask, loading } = useTreeStore()
+  const [text, setText] = useState('')
+  const [category, setCategory] = useState('auto')
+  const [error, setError] = useState<string | null>(null)
+  const taRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    fetchConfig()
-      .then((cfg) => {
-        if (Array.isArray(cfg.categories) && cfg.categories.length > 0) {
-          setCategories(cfg.categories);
-          if (!cfg.categories.includes(category)) setCategory(cfg.categories[0]);
-        }
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (el) {
-      el.style.height = 'auto';
-      el.style.height = `${Math.min(el.scrollHeight, 180)}px`;
+    if (taRef.current) {
+      taRef.current.style.height = 'auto'
+      taRef.current.style.height = Math.min(taRef.current.scrollHeight, 120) + 'px'
     }
-  }, [text]);
+  }, [text])
 
-  const submit = async () => {
-    const trimmed = text.trim();
-    if (!trimmed || loading) return;
-    setError(null);
-    setText('');
+  const send = async () => {
+    const t = text.trim()
+    if (!t || loading) return
+    setError(null)
+    const cat = category === 'auto' ? '' : category
     try {
-      await submitTask(trimmed, category);
-      // Keep focus for rapid follow-ups
-      textareaRef.current?.focus();
-    } catch (err: any) {
-      setError(err.message || 'Submission failed');
+      setText('')
+      await submitTask(t, cat || 'coding')
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to submit')
     }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      submit();
-    }
-  };
+  }
 
   return (
     <div className="composer">
-      {error && (
-        <div className="composer-error">
-          <AlertIcon size={14} />
-          <span>{error}</span>
-        </div>
-      )}
+      {error && <div className="composer-error"><AlertIcon size={13} /><span>{error}</span></div>}
       <div className="composer-box">
         <div className="composer-stack">
           <textarea
-            ref={textareaRef}
+            ref={taRef}
             className="composer-textarea"
-            placeholder="Message Parallel Mind…  (Shift+Enter for newline)"
-            value={text}
+            placeholder="Describe your task — e.g. 'Build a snake game in Python'…"
             rows={1}
+            value={text}
             disabled={loading}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={handleKeyDown}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() }
+            }}
           />
-          <div className="composer-tools">
-            <div className="category-picker">
-              {categories.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  className={`cat-pill ${category === c ? 'cat-pill-active' : ''}`}
-                  onClick={() => setCategory(c)}
-                  title={`ask as ${c}`}
-                >
-                  {c}
-                </button>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div className="category-pills">
+              {CATEGORIES.map(c => (
+                <button key={c} className={`cat-pill ${category === c ? 'active' : ''}`} onClick={() => setCategory(c)}>{c}</button>
               ))}
             </div>
-            <div className="composer-hint">
-              {activeTaskId ? `running: ${activeTaskId}` : 'enter to send · shift+enter for newline'}
-            </div>
+            <span className="composer-hint">{loading ? 'Working…' : '↵ Enter to send · ⇧↵ new line'}</span>
           </div>
         </div>
-        <button
-          className="send-btn"
-          onClick={submit}
-          disabled={loading || !text.trim()}
-          title="Run task"
-        >
-          {loading ? <StopIcon size={18} /> : <SendIcon size={18} />}
+        <button className="send-btn" onClick={send} disabled={loading || !text.trim()} aria-label="Send">
+          <SendIcon size={16} />
         </button>
       </div>
     </div>
-  );
+  )
 }
