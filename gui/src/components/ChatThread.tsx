@@ -1,148 +1,100 @@
-import { useEffect, useRef } from 'react';
-import { useTreeStore } from '../state/treeStore';
-import { ChatMessage } from '../state/types';
-import { MarkdownViewer } from './MarkdownViewer';
-import { BrainIcon, CopyIcon, CheckIcon, AlertIcon } from './icons';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react'
+import { useTreeStore } from '../state/treeStore'
+import { MarkdownViewer } from './MarkdownViewer'
+import { BoltIcon, CopyIcon, AlertIcon } from './icons'
 
-function Spinner() {
-  return <span className="spinner" aria-label="thinking" />;
-}
+export function ChatThread() {
+  const { messages } = useTreeStore()
+  const ref = useRef<HTMLDivElement>(null)
 
-function MessageMeta({ msg }: { msg: ChatMessage }) {
-  const [copied, setCopied] = useState(false);
-  const cost = msg.cost;
-  const costText = cost && Object.keys(cost).length > 0
-    ? JSON.stringify(cost)
-        .replace(/[{}\[\]"]+/g, ' ')
-        .trim()
-    : null;
+  useEffect(() => {
+    if (ref.current) ref.current.scrollTop = ref.current.scrollHeight
+  }, [messages])
 
-  const copy = () => {
-    navigator.clipboard.writeText(msg.content || '').catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
-
-  return (
-    <div className="msg-meta">
-      {msg.category && <span className="meta-pill">{msg.category}</span>}
-      {(msg.confidence ?? 0) > 0 && (
-        <span className="meta-label">
-          <strong>{Math.round((msg.confidence ?? 0) * 100)}%</strong> confidence
-        </span>
-      )}
-      {costText && (
-        <span className="meta-label meta-cost ellipsis">cost: {costText}</span>
-      )}
-      {msg.taskId && <span className="task-chip">{msg.taskId}</span>}
-      <span className="meta-sep" style={{ marginLeft: 'auto' }} />
-      <button className="icon-btn-sm" onClick={copy} title="Copy response">
-        {copied ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
-      </button>
-    </div>
-  );
-}
-
-function MessageItem({ msg }: { msg: ChatMessage }) {
-  if (msg.role === 'user') {
+  if (messages.length === 0) {
     return (
-      <div className="chat-item chat-item-user">
-        <div className="chat-content">{msg.content}</div>
-        <div className="avatar avatar-user">U</div>
+      <div className="chat-scroll" ref={ref}>
+        <div className="chat-thread">
+          <div className="chat-empty">
+            <div className="empty-logo"><BoltIcon size={28} /></div>
+            <h2>What should the parliament build?</h2>
+            <p>A single task becomes a hierarchy — Director → Team Leads → Coordinators → Workers — with self-healing at every level. Watch it plan, work and recover live.</p>
+            <div className="suggestion-grid">
+              <Suggestion label="Implement a binary search tree in Python" cat="coding" />
+              <Suggestion label="Explain quantum entanglement simply" cat="research" />
+              <Suggestion label="Solve: sum of primes below 100" cat="math" />
+              <Suggestion label="Draft a launch email for a new feature" cat="writing" />
+            </div>
+          </div>
+        </div>
       </div>
-    );
+    )
   }
 
   return (
-    <div className="chat-item chat-item-ai">
-      <div className="avatar avatar-ai">
-        <BrainIcon size={17} />
-      </div>
-      <div className="chat-content">
-        {(msg.status === 'sending' || msg.status === 'running') ? (
-          <div className="msg-thinking">
-            <Spinner />
-            <span>Assembling the hierarchy&hellip;</span>
+    <div className="chat-scroll" ref={ref}>
+      <div className="chat-thread">
+        {messages.map(m => (
+          <div key={m.id} className={`chat-item ${m.role === 'user' ? 'chat-item-user' : ''}`}>
+            {m.role === 'assistant' && <div className="avatar avatar-ai"><BoltIcon size={15} /></div>}
+            <div className="chat-content">
+              {m.role === 'assistant' && m.status !== 'error' && (
+                <div className="meta-row">
+                  {m.category && <span className="meta-pill">{m.category}</span>}
+                  {m.status === 'thinking' && <span className="meta-label">● Thinking…</span>}
+                  {m.taskId && <span className="meta-label">Task <strong>{m.taskId}</strong></span>}
+                </div>
+              )}
+              {m.status === 'thinking' ? (
+                <div className="msg-thinking"><span className="spinner" /> Director is planning — breaking your task into pieces…</div>
+              ) : m.status === 'error' ? (
+                <div className="msg-error"><AlertIcon size={14} /><span>{m.error || 'Something went wrong.'}</span></div>
+              ) : m.role === 'user' ? (
+                <>{m.content}</>
+              ) : (
+                <div className="assistant-card">
+                  <div className="assistant-card-head">
+                    <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
+                      Answer {m.confidence !== undefined ? `· confidence ${Math.round((m.confidence as number) * 100)}%` : ''}
+                    </span>
+                    <CopyButton text={m.content} />
+                  </div>
+                  <div className="assistant-card-body">
+                    <MarkdownViewer content={m.content} />
+                    {m.cost && (
+                      <div className="cost-row">
+                        {Object.entries(m.cost).map(([k, v]) => (
+                          <span key={k} className="cost-pill">{k}: {String(v)}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            {m.role === 'user' && <div className="avatar avatar-user">You</div>}
           </div>
-        ) : msg.status === 'error' ? (
-          <div className="msg-error">
-            <AlertIcon size={15} />
-            <div>{msg.error || 'Something went wrong.'}</div>
-          </div>
-        ) : (
-          <>
-            <MessageMeta msg={msg} />
-            <MarkdownViewer content={msg.content || '_No output returned._'} />
-          </>
-        )}
+        ))}
       </div>
     </div>
-  );
+  )
 }
 
-const SUGGESTIONS = [
-  { text: 'Write a Python function that finds duplicate files by content hash', cat: 'coding' },
-  { text: 'Research the key differences between React Server and Client Components', cat: 'research' },
-  { text: 'Explain the quicksort algorithm and its time complexity', cat: 'coding' },
-  { text: 'Compare groq vs openai inference latency for small models', cat: 'research' },
-];
-
-export function ChatThread() {
-  const { messages, pendingTaskId, pendingTaskLabel, submitTask, loading } = useTreeStore();
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pendingTaskId]);
-
+function Suggestion({ label, cat }: { label: string; cat: string }) {
+  const { submitTask } = useTreeStore()
   return (
-    <div className="chat-scroll" ref={scrollRef}>
-      <div className="chat-thread">
-        {messages.length === 0 ? (
-          <div className="chat-empty">
-            <div className="empty-logo">
-              <BrainIcon size={32} />
-            </div>
-            <div>
-              <h2>How can the hierarchy help today?</h2>
-              <p>
-                Submit a task and watch a Boss → Manager → Supervisor → Labour tree
-                break it down, execute, and iterate — live.
-              </p>
-            </div>
-            <div className="suggestion-grid">
-              {SUGGESTIONS.map((s) => (
-                <button
-                  key={s.text}
-                  className="suggestion-card"
-                  disabled={loading}
-                  onClick={() => submitTask(s.text, s.cat)}
-                >
-                  <span className="suggestion-label">{s.text}</span>
-                  <span className="suggestion-cat">{s.cat}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <>
-            {messages.map((m) => (
-              <MessageItem key={m.id} msg={m} />
-            ))}
-            {pendingTaskId && (
-              <div className="msg-thinking">
-                <Spinner />
-                <span>
-                  {pendingTaskLabel ? `“${pendingTaskLabel}” · ` : ''}
-                  {pendingTaskId} — not yet returned, stream waiting…
-                </span>
-              </div>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
+    <button className="suggestion-card" onClick={() => submitTask(label, cat)}>
+      <span className="suggestion-label">{label}</span>
+      <span className="suggestion-cat">{cat}</span>
+    </button>
+  )
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button className="icon-btn-sm" title="Copy answer" onClick={async () => { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1400) }}>
+      {copied ? <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--success)' }}>Copied!</span> : <CopyIcon size={14} />}
+    </button>
+  )
 }
