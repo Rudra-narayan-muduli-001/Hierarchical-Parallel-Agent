@@ -1,36 +1,35 @@
-import { Header } from './Header';
-import { TreeView } from './TreeView';
-import { NodeDetailPanel } from './NodeDetailPanel';
-import { PeerChatOverlay } from './PeerChatOverlay';
-import { WarningBanner } from './WarningBanner';
-import { ChatThread } from './ChatThread';
-import { ChatComposer } from './ChatComposer';
-import { useTreeStore } from '../state/treeStore';
+import { Header } from './Header'
+import { PipelineStepper } from './PipelineStepper'
+import { HealthBar } from './HealthBar'
+import { HierarchyTree } from './HierarchyTree'
+import { NodeInspector } from './NodeInspector'
+import { ChatThread } from './ChatThread'
+import { ChatComposer } from './ChatComposer'
+import { PeerChatOverlay } from './PeerChatOverlay'
+import { ProcessTimeline } from './ProcessTimeline'
 
 export function Layout() {
-  const { wsConnected } = useTreeStore();
-
   return (
     <div className="app">
-      <Header wsConnected={wsConnected} />
-
+      <Header />
       <div className="app-body">
         <aside className="sidebar">
-          <TreeView />
-          <WarningBanner />
+          <PipelineStepper />
+          <HealthBar />
+          <HierarchyTree />
         </aside>
 
         <main className="chat-main">
+          <ProcessTimeline />
           <ChatThread />
           <ChatComposer />
         </main>
 
         <aside className="inspector">
-          <NodeDetailPanel />
+          <NodeInspector />
         </aside>
       </div>
-
       <PeerChatOverlay />
     </div>
-  );
+  )
 }
