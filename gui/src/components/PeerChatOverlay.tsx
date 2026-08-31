@@ -1,49 +1,46 @@
-import { useTreeStore } from '../state/treeStore';
-import { ChatIcon, CloseIcon } from './icons';
+import { useTreeStore } from '../state/treeStore'
+import { MessageIcon, XIcon } from './icons'
 
 export function PeerChatOverlay() {
-  const { peerMessages, isChatOpen, toggleChat } = useTreeStore();
-
-  if (!isChatOpen) {
-    return (
-      <button
-        className="chat-toggle-btn"
-        onClick={toggleChat}
-        aria-label="Open peer messages"
-        style={{ display: 'none' }}
-      />
-    );
-  }
+  const { peerMessages, isChatOpen, toggleChat } = useTreeStore()
 
   return (
-    <div className="chat-overlay" role="dialog" aria-label="Peer messages">
-      <div className="chat-header">
-        <span className="chat-header-title">
-          <ChatIcon size={14} /> Peer Messages ({peerMessages.length})
-        </span>
-        <button className="chat-close" onClick={toggleChat} title="Close">
-          <CloseIcon size={14} />
-        </button>
-      </div>
-      <div className="chat-messages">
-        {peerMessages.length === 0 ? (
-          <p className="no-messages">No peer messages yet. Sibling nodes will publish notes here.</p>
-        ) : (
-          <div className="chat-message-list">
-            {peerMessages.slice(-50).map((m: any, i: number) => (
-              <div key={i} className="chat-message">
-                <div className="chat-message-meta">
-                  <span className="chat-from">{m.from_node_id}</span>
-                  <span className="chat-time">
-                    {new Date(m.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                  </span>
-                </div>
-                <div className="chat-text">{m.text}</div>
-              </div>
-            ))}
+    <>
+      <button className="fab" onClick={toggleChat} aria-label="Team chat">
+        <MessageIcon size={14} />
+        Team Chat
+        {peerMessages.length > 0 && <span className="fab-badge">{peerMessages.length}</span>}
+      </button>
+
+      {isChatOpen && (
+        <div className="chat-overlay" role="dialog" aria-label="Team chat">
+          <div className="chat-overlay-head">
+            <div className="chat-overlay-title"><MessageIcon size={13} /> Team chat · agents talking</div>
+            <button className="icon-btn-sm" onClick={toggleChat} aria-label="Close"><XIcon size={13} /></button>
           </div>
-        )}
-      </div>
-    </div>
-  );
+          <div className="chat-messages">
+            {peerMessages.length === 0 ? (
+              <p className="no-data" style={{ textAlign: 'center', padding: 16 }}>No peer messages yet. When two agents of the same rank share context, it appears here.</p>
+            ) : (
+              <div className="chat-msg-list">
+                {peerMessages.map((m, i) => (
+                  <div key={i} className="chat-msg">
+                    <div className="chat-msg-meta">
+                      <span className="chat-from">{m.from_node_id}</span>
+                      <span className="chat-time">{formatTime(m.ts)} · {m.scope}</span>
+                    </div>
+                    <div className="chat-text">{m.text}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function formatTime(ts: string) {
+  try { return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) } catch { return ts }
 }
