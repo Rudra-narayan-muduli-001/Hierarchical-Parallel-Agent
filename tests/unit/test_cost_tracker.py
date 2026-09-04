@@ -83,9 +83,30 @@ class TestProviderTokenTracking:
 
 
 class TestOrchestratorCostTracking:
-    def test_orchestrator_produces_cost(self):
-        """Full mock run should produce cost summary."""
-        orch = Orchestrator(task_id="cost_test")
+    def test_orchestrator_produces_cost(self, tmp_path):
+        """Full mock run should produce cost summary — uses synthetic mock config."""
+        import yaml
+        from pathlib import Path
+
+        # Synthetic mock config isolated from real config/config.yaml
+        mock_cfg = {
+            "tiers": {"order": ["S", "A", "B", "C", "D"]},
+            "categories": {
+                "coding": {"boss_model": "mock-super", "boss_system_prompt": "prompts/boss/coding_boss.md"},
+                "research": {"boss_model": "mock-super", "boss_system_prompt": "prompts/boss/research_boss.md"},
+            },
+            "models": [
+                {"id": "mock-super", "provider": "mock", "tier": "S", "context_window": 128000, "api_key_env": "MOCK_API_KEY"},
+                {"id": "mock-mid", "provider": "mock", "tier": "B", "context_window": 64000, "api_key_env": "MOCK_API_KEY"},
+                {"id": "mock-cheap", "provider": "mock", "tier": "D", "context_window": 16000, "api_key_env": "MOCK_API_KEY"},
+            ],
+            "failover": {"max_retries_per_node": 2, "retry_backoff_seconds": [2, 5], "warning_threshold_percent": 60, "cooldown_after_failure_seconds": 300},
+            "behavior": {"continue_on_degraded": True, "allow_model_reuse_on_pool_exhaustion": True},
+        }
+        cfg_path = tmp_path / "mock_config.yaml"
+        cfg_path.write_text(yaml.safe_dump(mock_cfg), encoding="utf-8")
+
+        orch = Orchestrator(task_id="cost_test", config_path=str(cfg_path))
         result = _run(orch.run_task("Say hello", "coding"))
         cost = result["cost_summary"]
         assert cost["total_tokens"] > 0
