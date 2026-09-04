@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "llm-hierarchy"
@@ -27,3 +27,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+pythonpath = ["src"]
+testpaths = ["tests"]
+norecursedirs = ["InfoSeeker-main", "gui", ".logs", "__pycache__", ".git", "node_modules"]
+addopts = "--override-ini=pythonpath=src"
