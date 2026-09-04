@@ -53,16 +53,41 @@ def test_router_llm_classify():
     assert cat == "coding"
 
 
-def test_orchestrator_full_run():
-    orch = Orchestrator(task_id="or_test")
+def _make_mock_config(tmp_path):
+    """Helper: write a synthetic mock-only config.yaml and return its path."""
+    import yaml as _yaml
+
+    mock_cfg = {
+        "tiers": {"order": ["S", "A", "B", "C", "D"]},
+        "categories": {
+            "coding": {"boss_model": "mock-super", "boss_system_prompt": "prompts/boss/coding_boss.md"},
+            "research": {"boss_model": "mock-super", "boss_system_prompt": "prompts/boss/research_boss.md"},
+        },
+        "models": [
+            {"id": "mock-super", "provider": "mock", "tier": "S", "context_window": 128000, "api_key_env": "MOCK_API_KEY"},
+            {"id": "mock-mid", "provider": "mock", "tier": "B", "context_window": 64000, "api_key_env": "MOCK_API_KEY"},
+            {"id": "mock-cheap", "provider": "mock", "tier": "D", "context_window": 16000, "api_key_env": "MOCK_API_KEY"},
+        ],
+        "failover": {"max_retries_per_node": 2, "retry_backoff_seconds": [2, 5], "warning_threshold_percent": 60, "cooldown_after_failure_seconds": 300},
+        "behavior": {"continue_on_degraded": True, "allow_model_reuse_on_pool_exhaustion": True},
+    }
+    p = tmp_path / "mock_config.yaml"
+    p.write_text(_yaml.safe_dump(mock_cfg), encoding="utf-8")
+    return str(p)
+
+
+def test_orchestrator_full_run(tmp_path):
+    cfg_path = _make_mock_config(tmp_path)
+    orch = Orchestrator(task_id="or_test", config_path=cfg_path)
     result = _run(orch.run_task("Solve this problem", "coding"))
     assert "output" in result
     assert "cost_summary" in result
     assert result["cost_summary"]["total_tokens"] > 0
 
 
-def test_orchestrator_research_run():
-    orch = Orchestrator(task_id="or_research")
+def test_orchestrator_research_run(tmp_path):
+    cfg_path = _make_mock_config(tmp_path)
+    orch = Orchestrator(task_id="or_research", config_path=cfg_path)
     result = _run(orch.run_task("Find info on Python", "research"))
     assert "output" in result
 
