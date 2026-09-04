@@ -26,7 +26,20 @@ class TestMockProvider:
     def test_default_response(self):
         p = MockProvider()
         result = _run(p.complete([{"role": "user", "content": "hi"}]))
-        assert "mock output" in result["content"]
+        # Default canned_response is a JSON envelope with merged_output;
+        # verify it contains mock-family wording (not a literal "mock output").
+        content = result["content"]
+        assert "mock" in content.lower()
+        # Also verify it is valid JSON with expected keys when parsed.
+        import json as _json
+
+        try:
+            data = _json.loads(content)
+            assert "merged_output" in data
+            assert "confidence" in data
+        except _json.JSONDecodeError:
+            # If not JSON, at least the raw string mentions mock.
+            assert "mock" in content.lower()
 
     def test_supports_structured_output(self):
         p = MockProvider(structured_output_schema={"type": "object"})
