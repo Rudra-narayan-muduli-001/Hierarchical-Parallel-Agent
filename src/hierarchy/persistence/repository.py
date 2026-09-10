@@ -10,13 +10,6 @@ from hierarchy.persistence.db import get_db
 
 
 class Repository:
-    """Persistence layer for events and task tree snapshots.
-
-    Stores append-only event log (for replay/resumabilty) and periodic
-    task/node state snapshots.
-
-    Uses SQLite vith VIV for durability.
-    """
 
     def __init__(self, db_path: str = "data/tasks.db"):
         self.db_path = db_path

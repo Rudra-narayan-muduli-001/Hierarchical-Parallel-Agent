@@ -1,10 +1,3 @@
-"""REST routes for task submission and retrieval.
-
-POST /api/tasks — submit a new task, return task_id and final output.
-GET /api/tasks/{task_id} — get task status/details.
-GET /api/tasks/{task_id}/tree — get the full node tree for the task.
-"""
-
 from __future__ import annotations
 
 import asyncio

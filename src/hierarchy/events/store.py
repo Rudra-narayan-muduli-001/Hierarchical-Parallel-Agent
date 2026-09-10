@@ -10,14 +10,6 @@ from hierarchy.schemas.node_state import NodeState, NodeSnapshot
 
 
 class EventStore:
-    """Wraps EventBus with persistence for resumability.
-
-    Every event emitted on the bus is also appended to the SQLite store.
-    Snapshots are written periodically (e.g., on status changes to completed).
-
-    Deliverable (Phase 5):
-      - Run a Labour, dump the full event log, replay into NodeSnapshot.
-    """
 
     def __init__(self, bus: EventBus, repo: Repository, task_id: str):
         self.bus = bus

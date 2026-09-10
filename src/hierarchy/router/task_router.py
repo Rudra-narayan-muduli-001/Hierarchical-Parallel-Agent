@@ -1,13 +1,3 @@
-"""Task Router — classifies raw task text into a category.
-
-Routes incoming user requests to one of the configured categories.
-Can use an explicit override (e.g., --category coding on the CLI) or
-fall back to a lightweight LLM call that outputs the category name.
-
-In the full system (Phase 11+), the LLM call uses real structured output.
-With MockProvider, a default category is returned (or matched by keyword).
-"""
-
 from __future__ import annotations
 
 import json
@@ -26,13 +16,6 @@ KEYWORD_HINTS = {
 
 
 class TaskRouter:
-    """Routes incoming task text to a category.
-
-    Strategy:
-      1. If `override_category` is given, return it directly.
-      2. Try keyword matching against KEYWORD_HINTS.
-      3. If still ambiguous, call the LLM provider for classification.
-    """
 
     def __init__(self, categories: List[str], provider: Optional[Provider] = None):
         self._categories = categories
@@ -43,15 +26,6 @@ class TaskRouter:
         task_text: str,
         override_category: Optional[str] = None,
     ) -> str:
-        """Classify a task and return the category name.
-
-        Args:
-            task_text: The raw task description.
-            override_category: If provided, bypass classification.
-
-        Returns:
-            The category name.
-        """
         if override_category:
             if override_category not in self._categories:
                 raise ValueError(

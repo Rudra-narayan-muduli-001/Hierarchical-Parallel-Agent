@@ -1,8 +1,3 @@
-"""WebSocket endpoint streaming Event Bus events to connected clients.
-
-WS /api/ws/tasks/{task_id} — connects client to the event stream.
-"""
-
 from __future__ import annotations
 
 import asyncio

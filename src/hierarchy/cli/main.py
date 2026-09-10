@@ -1,13 +1,3 @@
-"""CLI — run tasks from the command line.
-
-Usage:
-    python -m hierarchy.cli.main "What is 2+3?" --category coding
-    python -m hierarchy.cli.main "Find info about Python" --category research
-
-Deliverable (Phase 10): CLI can run an end-to-end task fully through
-mock provider from the command line.
-"""
-
 import asyncio
 import logging
 import sys

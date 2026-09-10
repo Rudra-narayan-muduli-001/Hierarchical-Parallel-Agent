@@ -1,14 +1,3 @@
-"""Cost Tracker — per-node and per-task token/cost accounting.
-
-Logs token usage and cost for every provider call.
-Aggregated per task and per node.
-Provider response dicts with 'usage' key are automatically tracked.
-
-Integration with Provider:
-  Providers return {"content": ..., "usage": {"prompt_tokens": N, ...}}
-  CostTracker reads usage and accumulates per-node costs.
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -38,7 +27,6 @@ MODEL_COST_PER_1K = {
 
 
 class CostTracker:
-    """Tracks token usage and cost per node and per task."""
 
     def __init__(self):
         self._node_costs: Dict[str, NodeCost] = {}
@@ -52,7 +40,6 @@ class CostTracker:
         model_id: str,
         result: dict,
     ) -> NodeCost:
-        """Record cost from a provider result dict with 'usage' key."""
         usage = result.get("usage", {})
         return self.record_call(
             node_id=node_id,

@@ -1,9 +1,3 @@
-"""Route for sanitized config exposure.
-
-GET /api/config — returns category list, model list (no API keys),
-                  and any other GUI-renderable settings.
-"""
-
 from __future__ import annotations
 
 from fastapi import APIRouter

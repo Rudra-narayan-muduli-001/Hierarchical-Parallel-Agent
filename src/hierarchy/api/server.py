@@ -1,8 +1,3 @@
-"""FastAPI app — serves the REST API + WebSocket endpoint.
-
-Wires routes_tasks, routes_config, and ws together.
-"""
-
 from __future__ import annotations
 
 from fastapi import FastAPI
