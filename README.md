@@ -8,8 +8,8 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/Version-0.1.0-blue?style=flat-square)]()
-[![Tests](https://img.shields.io/badge/Tests-122%20passed-brightgreen?style=flat-square)]()
-[![Models](https://img.shields.io/badge/Models-3%20mock%20%2B%203%20real-purple?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-132%20passed-brightgreen?style=flat-square)]()
+[![Models](https://img.shields.io/badge/Models-3%20active-purple?style=flat-square)]()
 
 ---
 
@@ -27,9 +27,11 @@ The system is **self-healing**: when any model times out, rate-limits, or errors
 the parent rank automatically swaps in a replacement — all the way up to a
 **Boss Election** if the Boss itself dies.
 
-> **Zero API cost to try it.** The default config ships with 3 deterministic
-> mock models that work end-to-end with fault injection, so you can demo the entire
-> failover machinery for free before plugging in real providers.
+> **Zero API cost to try the test suite.** All 132 tests run offline against the
+> deterministic mock provider with fault injection, so you can verify the entire
+> failover machinery for free. For live runs, the default config uses Groq
+> models (set `GROQ_API_KEY`), or point `config/config.yaml` at `provider: mock`
+> models for zero-cost end-to-end runs.
 
 ---
 
@@ -97,35 +99,83 @@ TASK ROUTER (classifies task → category)
 
 ### 1. Install
 
-```bash
+Create and activate a virtual environment, then install the Python backend
+packages from `requirements.txt` (FastAPI, uvicorn, Pydantic, httpx, MCP, …):
+
+**Windows PowerShell**
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install --upgrade pip
 pip install -r requirements.txt
+```
+
+**Linux / macOS**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Then install the GUI packages:
+
+```bash
 cd gui && npm install && cd ..
 ```
 
-### 2. Configure
-
-Add API keys to `.env` at the repo root (copy from `.env.example`):
+Verify the install:
 
 ```bash
+python -m pytest tests/ -q
+```
+
+You should see `132 passed`. If `pytest` isn't found, the virtual environment
+isn't activated or `pip install -r requirements.txt` didn't complete.
+
+### 2. Configure
+
+Copy `.env.example` to `.env` at the repo root and add keys:
+
+```bash
+cp .env.example .env
+```
+
+```bash
+GROQ_API_KEY=...        # required by the default config (3 Groq models)
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 DEEPSEEK_API_KEY=...
-FIRECRAWL_API_KEY=...
+NVIDIA_API_KEY=...      # NVIDIA NIM hosted API (build.nvidia.com)
+OPENCODE_API_KEY=...    # OpenCode Zen gateway (free models available)
 ```
 
-> **No keys? No problem.** The default config uses 3 mock models
-> (`mock-super`, `mock-mid`, `mock-cheap`) — real providers activate the moment
-> you reference them in `config/config.yaml`.
+> The default `config/config.yaml` points at Groq models, so `GROQ_API_KEY` is
+> the only key needed for live runs. The full key list lives in `.env.example`.
+> For zero-cost runs, set a model's `provider: mock` in `config/config.yaml` —
+> no key required.
 
-### 3. Start the Backend
+### 3. Run (recommended: one command)
 
-**Windows PowerShell**
+```bash
+python run.py
+```
+
+This starts the FastAPI backend (`http://localhost:8000`) and the Vite dev
+server, opens the GUI at **http://localhost:3000**, and supervises both
+processes.
+Logs go to `.logs/backend.log` and `.logs/gui.log`. Press `Ctrl+C` to stop
+everything.
+
+### 4. Or start backend + GUI manually
+
+**Backend** — Windows PowerShell
 ```powershell
 $env:PYTHONPATH="src"
 python -m uvicorn hierarchy.api.server:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-**Linux / macOS**
+**Backend** — Linux / macOS
 ```bash
 PYTHONPATH=src python -m uvicorn hierarchy.api.server:app --host 0.0.0.0 --port 8000 --reload
 ```
@@ -135,15 +185,14 @@ Verify it's live:
 curl http://localhost:8000/api/config
 ```
 
-### 4. Start the GUI
-
+**GUI** (new terminal):
 ```bash
 cd gui && npm run dev
 ```
 
 Open **http://localhost:3000** — the Vite server proxies `/api/*` to port 8000.
 
-### 5. Or Use the CLI
+### 5. Or use the CLI (no servers needed)
 
 **Windows PowerShell**
 ```powershell
@@ -160,7 +209,7 @@ PYTHONPATH=src python -m hierarchy.cli.main "Implement a binary search tree" --c
 
 ## Testing
 
-All **122 tests** run offline against the mock provider — no API keys, no network.
+All **132 tests** run offline against the mock provider — no API keys, no network.
 
 **Windows PowerShell**
 ```powershell
@@ -175,7 +224,7 @@ PYTHONPATH=src python -m pytest tests/ -v
 
 | Suite | Count | Covers |
 |-------|-------|--------|
-| Unit | 114 | Config, schemas, providers, pool allocator, failover, synthesizer, peer bus, cost tracker, event store, node lifecycle, hierarchy, boss election, router |
+| Unit | 124 | Config, schemas, providers, pool allocator, failover, synthesizer, peer bus, cost tracker, event store, node lifecycle, hierarchy, boss election, router |
 | Integration | 8 | Full-tree success, labour timeout swap, supervisor/manager API-error swap, boss failure election, 60% failure warning, single-model degraded fallback, zero-model hard failure |
 
 ---
@@ -198,7 +247,7 @@ parallel-mind-2.0/
 │   ├── core/                # Node, Boss, Manager, Supervisor, Labour, Failover…
 │   ├── events/              # Event Bus + SQLite store
 │   ├── persistence/         # Repository pattern (resumability)
-│   ├── providers/           # mock · openai · anthropic · deepseek
+│   ├── providers/           # mock · openai · anthropic · deepseek · groq · nvidia · opencode_zen
 │   ├── registry/            # Model registry + tier ordering
 │   ├── router/              # Task → category classification
 │   ├── schemas/             # Task, Decomposition, Synthesis, Events
@@ -210,7 +259,7 @@ parallel-mind-2.0/
 │       ├── state/           # Zustand store
 │       └── api/             # REST + WebSocket clients
 └── tests/
-    ├── unit/                # 114 tests
+    ├── unit/                # 124 tests
     └── integration/         # 8 failover scenario tests
 ```
 
@@ -224,10 +273,10 @@ tiers:
 
 categories:
   coding:
-    boss_model: mock-super
+    boss_model: llama-3.1-8b-instant
     boss_system_prompt: prompts/boss/coding_boss.md
   research:
-    boss_model: mock-super
+    boss_model: llama-3.1-8b-instant
     boss_system_prompt: prompts/boss/research_boss.md
     worker_pools:
       search:     { pool_size: 8 }
@@ -236,12 +285,12 @@ categories:
       filesystem: { pool_size: 1 }
 
 models:
-  - id: mock-super
-    provider: mock
+  - id: llama-3.1-8b-instant
+    provider: groq
     tier: S
-    context_window: 128000
-    api_key_env: MOCK_API_KEY
-    rate_limit_rpm: 1000
+    context_window: 131072
+    api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
 
 failover:
   max_retries_per_node: 2
@@ -269,7 +318,7 @@ behavior:
 ```bash
 curl -X POST http://localhost:8000/api/tasks \
   -H "Content-Type: application/json" \
-  -d '{"task_text": "Implement a binary search tree", "category": "coding"}'
+  -d '{"task": "Implement a binary search tree", "category": "coding"}'
 ```
 
 ---
