@@ -1,17 +1,3 @@
-"""Filesystem worker — file operations via filesystem_tools MCP server.
-
-Adapted from InfoSeeker's FilesystemAgent. Provides 16 file operation tools:
-read, write, list, search, image analysis, video processing, PDF/Excel reading,
-and document conversion.
-
-The filesystem_tools MCP server lives at InfoSeeker's mcp_servers/filesystem_tools.py
-and runs as a subprocess with configurable workspace root.
-
-Integration with Node hierarchy:
-    Used for tasks involving file I/O, media analysis, document parsing.
-    A Supervisor would delegate file-reading tasks here.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -24,13 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class FileWorker(BaseMCPWorker):
-    """Filesystem operations worker using filesystem_tools MCP server.
-
-    Provides file read/write, search, image/video analysis, PDF/Excel
-    parsing, and document conversion.
-
-    Default MCP server: filesystem_tools.py (Python subprocess)
-    """
 
     DEFAULT_DESCRIPTION = (
         "Performs file system operations: read/write files, search directories, "
@@ -88,7 +67,6 @@ You are a Filesystem Worker. You perform file operations.
         )
 
     async def run(self, task_text: str) -> dict[str, Any]:
-        """Execute a filesystem task using filesystem_tools MCP tools."""
         if not self._started:
             await self.start()
 

@@ -1,15 +1,3 @@
-"""Search worker — web search and crawling via Firecrawl MCP server.
-
-Adapted from InfoSeeker's SearchAgent. Uses the Firecrawl MCP server to provide
-web search (firecrawl_search), page scraping (firecrawl_scrape), crawling
-(firecrawl_crawl), and structured extraction (firecrawl_extract).
-
-Integration with Node hierarchy:
-    This worker would be used by a research Supervisor's Labour nodes.
-    The Supervisor decomposes a research query into parallel subtasks,
-    dispatches them via a WorkerPool of SearchWorkers, and synthesizes results.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -22,14 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class SearchWorker(BaseMCPWorker):
-    """Web search and crawling worker using Firecrawl MCP.
-
-    Provides access to Firecrawl tools for web search, page scraping,
-    crawling, and structured data extraction.
-
-    Default MCP server: firecrawl-mcp-server (Node.js)
-        Built from: src/infoseeker/mcp_servers/firecrawl-mcp-server/
-    """
 
     DEFAULT_DESCRIPTION = (
         "Performs web searches and crawls web pages using the Firecrawl MCP server. "
@@ -87,11 +67,6 @@ You are a Search Worker. You use Firecrawl tools to search the web and extract i
         )
 
     async def run(self, task_text: str) -> dict[str, Any]:
-        """Execute a search task using Firecrawl MCP tools.
-
-        Calls firecrawl_search for queries, firecrawl_scrape for URLs.
-        Returns raw tool output for the Supervisor to synthesize.
-        """
         if not self._started:
             await self.start()
 

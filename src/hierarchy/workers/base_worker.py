@@ -1,9 +1,3 @@
-"""Base MCP worker — connects to MCP servers for tool execution.
-
-Pattern extracted from InfoSeeker's SearchAgent/BrowserAgent/CodeAgent/FilesystemAgent.
-In the full system, this integrates as a Labour node subclass.
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -19,16 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class BaseMCPWorker:
-    """Stateless worker that connects to an MCP server via stdio and exposes its tools.
-
-    Integration with Node hierarchy:
-        In the full system, this would be composed into a Labour node subclass.
-        The Labour's run() calls execute_task(), which uses MCP tools via an LLM
-        bound to that Labour (or calls tools directly for deterministic operations).
-
-    Adapted from InfoSeeker's pattern where each agent (SearchAgent, BrowserAgent, etc.)
-    connects to an MCP server subprocess and retrieves tools at startup.
-    """
 
     def __init__(
         self,
@@ -65,10 +49,6 @@ class BaseMCPWorker:
         return list(self._tools)
 
     async def start(self) -> None:
-        """Connect to the MCP server and retrieve available tools.
-
-        Uses AsyncExitStack for proper cleanup, following the MCP SDK pattern.
-        """
         if self._started:
             return
 
@@ -100,7 +80,6 @@ class BaseMCPWorker:
         self._started = True
 
     async def list_tools(self) -> list[dict[str, Any]]:
-        """Return metadata for all available MCP tools."""
         if not self._started:
             await self.start()
         return [
@@ -111,7 +90,6 @@ class BaseMCPWorker:
     async def call_tool(
         self, tool_name: str, arguments: dict[str, Any] | None = None
     ) -> Any:
-        """Call a named MCP tool with the given arguments."""
         if not self._started:
             await self.start()
         if not self._session:
@@ -121,20 +99,11 @@ class BaseMCPWorker:
         return result
 
     async def run(self, task_text: str) -> dict[str, Any]:
-        """Execute a task using MCP tools.
-
-        This is the primary entry point for Labour node integration.
-        In the full system, this method is called by Labour.run(). The Labour's
-        bound LLM decides which tools to call and synthesizes the result.
-
-        For deterministic tasks, subclasses override this to call specific tools.
-        """
         raise NotImplementedError(
             "Subclasses must implement run() or override with tool-specific logic"
         )
 
     async def close(self) -> None:
-        """Disconnect from the MCP server and clean up resources."""
         if self._exit_stack:
             await self._exit_stack.aclose()
         self._session = None

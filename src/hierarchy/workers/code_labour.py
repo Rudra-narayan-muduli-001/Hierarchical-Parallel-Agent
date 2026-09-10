@@ -1,17 +1,3 @@
-"""Code execution worker — sandboxed code execution via code_exec MCP server.
-
-Adapted from InfoSeeker's CodeAgent. Provides a sandboxed terminal for
-running code, file operations, and package installation in an isolated
-environment.
-
-The code_exec MCP server lives at InfoSeeker's mcp_servers/code_exec.py
-and runs as a subprocess with its own filesystem workspace.
-
-Integration with Node hierarchy:
-    Used by coding category Supervisors/Managers for tasks that require
-    actual code execution rather than just LLM code generation.
-"""
-
 from __future__ import annotations
 
 import logging
@@ -24,13 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class CodeWorker(BaseMCPWorker):
-    """Code execution worker using a sandboxed code_exec MCP server.
-
-    Provides code execution, file I/O, terminal commands, and package
-    management in an isolated workspace.
-
-    Default MCP server: code_exec.py (Python subprocess)
-    """
 
     DEFAULT_DESCRIPTION = (
         "Executes code in a sandboxed environment with terminal access, "
@@ -78,10 +57,6 @@ You are a Code Execution Worker. You execute code in a sandboxed environment.
         )
 
     async def run(self, task_text: str) -> dict[str, Any]:
-        """Execute a code task using the code_exec MCP tools.
-
-        Runs code in the sandboxed environment and returns output.
-        """
         if not self._started:
             await self.start()
 

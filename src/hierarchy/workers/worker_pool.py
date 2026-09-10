@@ -1,14 +1,3 @@
-"""Worker pool manager — parallel execution across a pool of MCP workers.
-
-Pattern extracted from InfoSeeker's search_worker_pool.py and browser_worker_pool.py.
-Key design decisions preserved:
-  - Lock-protected pool with busy/available tracking
-  - Parallel execution via asyncio.gather with return_exceptions=True
-  - Retry logic with exponential backoff (max 5 attempts)
-  - Lazy initialization on first use
-  - Pool size configured via config (defaults to YAML or env)
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -24,11 +13,6 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class PoolConfig:
-    """Configuration for a worker pool.
-
-    Pool sizes are configured in config/mcp_servers.yaml and loaded
-    at startup. This mirrors InfoSeeker's pool_config.yaml pattern.
-    """
 
     pool_size: int = 5
     max_retries: int = 5
@@ -40,25 +24,6 @@ class PoolConfig:
 
 
 class WorkerPool:
-    """Manages a pool of BaseMCPWorker instances for parallel task execution.
-
-    Adapted from InfoSeeker's search_worker_pool.py (40 workers) and
-    browser_worker_pool.py (5 workers). Supports:
-      - Lock-protected worker allocation
-      - Parallel subtask execution via asyncio.gather
-      - Retry with backoff on failure
-      - Lazy initialization
-
-    Integration with Node hierarchy:
-        A Supervisor would hold a WorkerPool reference and delegate parallel
-        subtasks to it. The pool manages the MCP worker lifecycle.
-
-    Usage:
-        pool = WorkerPool(SearchWorker, PoolConfig(pool_size=8))
-        await pool.initialize()
-        results = await pool.execute_subtasks(["query1", "query2", "query3"])
-        await pool.close()
-    """
 
     def __init__(
         self,
@@ -76,12 +41,6 @@ class WorkerPool:
         return self._config.pool_size
 
     async def initialize(self) -> None:
-        """Create and start all workers in the pool.
-
-        Workers are created first (fast, no I/O), then started in parallel
-        via asyncio.gather (slow, MCP subprocess spawns). This two-phase
-        approach mirrors InfoSeeker's pattern for faster startup.
-        """
         if self._initialized:
             return
 
@@ -118,19 +77,6 @@ class WorkerPool:
         )
 
     async def execute_subtasks(self, subtasks: list[str]) -> dict[str, Any]:
-        """Execute subtasks in parallel across available workers.
-
-        Args:
-            subtasks: List of self-contained task strings, 1 to pool_size.
-
-        Returns:
-            Dict with keys: results (successful), failed (errors),
-            subtasks_count, agents_used, pool_size.
-
-        Raises:
-            ValueError: If subtasks list is empty or exceeds pool size.
-            RuntimeError: If not enough workers are available.
-        """
         if not self._initialized:
             await self.initialize()
 
@@ -217,7 +163,6 @@ class WorkerPool:
                     slot.is_busy = False
 
     async def close(self) -> None:
-        """Close all workers in the pool."""
         for slot in self._workers:
             if slot.worker._started:
                 await slot.worker.close()
@@ -241,7 +186,6 @@ class WorkerPool:
 
 
 class _WorkerSlot:
-    """Internal slot tracking a worker's busy state."""
 
     def __init__(self, worker: BaseMCPWorker, agent_id: str):
         self.worker = worker
