@@ -25,15 +25,6 @@ from hierarchy.schemas.node_state import (
 
 
 class Node(ABC):
-    """Base class for all nodes in the hierarchy.
-
-    Boss/Manager/Supervisor/Labour all share this base class (§5 of AGENTS.md).
-    Subclasses override `run()` to implement their specific behaviour.
-
-    Lifecycle:
-        assigned -> thinking -> executing -> (waiting_children -> synthesizing)? -> completed
-        Any state -> failed on error
-    """
 
     def __init__(
         self,
@@ -83,7 +74,6 @@ class Node(ABC):
             parent_id=self.parent_id,
         ))
 
-    # ── Status ──────────────────────────────────────────────────
 
     @property
     def status(self) -> NodeState:
@@ -96,21 +86,18 @@ class Node(ABC):
         self._updated_at = datetime.now(timezone.utc)
         self._emit(node_status_changed(self.id, old.value, new.value))
 
-    # ── Thought stream ──────────────────────────────────────────
 
     def add_thought(self, text: str) -> None:
         entry = ThoughtEntry(text=text, ts=datetime.now(timezone.utc))
         self._thought_stream.append(entry)
         self._emit(node_thought(self.id, text))
 
-    # ── Output ──────────────────────────────────────────────────
 
     def set_output(self, output: str) -> None:
         self._output = output
         self._updated_at = datetime.now(timezone.utc)
         self._emit(node_output(self.id, output))
 
-    # ── Error ───────────────────────────────────────────────────
 
     def set_error(self, error_type: str, message: str) -> None:
         self._error = message
@@ -118,7 +105,6 @@ class Node(ABC):
         self.status = NodeState.failed
         self._emit(node_error(self.id, error_type, message))
 
-    # ── Replacement ─────────────────────────────────────────────
 
     def record_replacement(self, old_model: str, new_model: str, reason: str) -> None:
         entry = ReplacementEntry(
@@ -130,7 +116,6 @@ class Node(ABC):
         self._replaced_history.append(entry)
         self._emit(node_replaced(self.id, old_model, new_model, reason))
 
-    # ── Snapshot ────────────────────────────────────────────────
 
     def snapshot(self) -> NodeSnapshot:
         return NodeSnapshot(
@@ -152,28 +137,16 @@ class Node(ABC):
             updated_at=self._updated_at,
         )
 
-    # ── Lifecycle ───────────────────────────────────────────────
 
     @abstractmethod
     async def run(self, task_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute this node's work.
-
-        Args:
-            task_context: Dict with 'task' (str or Task), plus any
-                          additional context the node needs.
-
-        Returns:
-            Dict with keys like {'output': str, 'confidence': float, ...}.
-        """
         ...
 
-    # ── Internal helpers ────────────────────────────────────────
 
     def _emit(self, event) -> None:
         if self._event_bus:
             self._event_bus.emit(event)
 
-    # ── Peer communication ──────────────────────────────────────
 
     def _category_rank_scope(self) -> str:
         return category_rank_scope(self.category, self.role)
@@ -189,13 +162,6 @@ class Node(ABC):
         scope: str = "category_rank",
         task_ref: Optional[str] = None,
     ) -> Optional[Any]:
-        """Publish a peer message to a scope.
-
-        Args:
-            text: Short message text.
-            scope: 'category_rank' (default), 'parent', or explicit scope key.
-            task_ref: Optional task reference ID.
-        """
         if not self._peer_bus:
             return None
         if scope == "category_rank":
@@ -214,7 +180,6 @@ class Node(ABC):
     def get_relevant_peer_notes(
         self, scope: str = "category_rank", limit: int = 10
     ) -> List[str]:
-        """Retrieve peer notes from a scope (e.g., to feed into synthesis)."""
         if not self._peer_bus:
             return []
         if scope == "category_rank":

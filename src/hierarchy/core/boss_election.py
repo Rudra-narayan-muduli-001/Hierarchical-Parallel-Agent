@@ -1,14 +1,3 @@
-"""Boss Election — Manager vote logic on Boss failure.
-
-Implements ARCHITECTURE §6 Boss failure handling:
-  - On Boss failure, active Managers negotiate via short structured
-    reasoning exchange (bounded turns)
-  - The elected Manager is promoted to Boss
-  - A new Manager is spawned if needed
-
-The election is lightweight — short structured vote, not open-ended.
-"""
-
 from __future__ import annotations
 
 import json
@@ -26,18 +15,6 @@ async def conduct_boss_election(
     task_id: str,
     event_bus=None,
 ) -> str:
-    """Conduct a vote among Managers to elect a new Boss.
-
-    Args:
-        managers: List of active Manager nodes.
-        provider: LLM provider for structured vote exchange.
-        category: The task category.
-        task_id: The task ID for event emission.
-        event_bus: EventBus for emitting election events.
-
-    Returnss:
-        The node_id of the selected new Boss Manager.
-    """
     if not managers:
         raise ValueError("Cannot elect a Boss with no Managers available")
 

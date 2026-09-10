@@ -1,12 +1,3 @@
-"""Boss — top-level coordinator, spawns Managers, does final synthesis.
-
-The Boss is always the highest-tier model for its category.
-It decomposes the user task into Manager-level sub-tasks with assigned
-complexity tiers. On Manager failure, it swaps the Manager's model.
-
-Boss failure triggers election (handled by orchestrator, see boss_election.py).
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -26,7 +17,6 @@ from hierarchy.schemas.node_state import NodeState
 
 
 class Boss(Node):
-    """Top-level agent that spawns Managers and performs final synthesis."""
 
     def __init__(
         self,
@@ -59,7 +49,6 @@ class Boss(Node):
         self._max_retries = max_retries
 
     async def run(self, task_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute the Boss lifecycle."""
         self.status = NodeState.thinking
         task_text = task_context.get("task", "")
         self.add_thought(f"Boss processing task: {task_text[:80]}")

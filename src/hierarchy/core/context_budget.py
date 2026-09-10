@@ -6,16 +6,6 @@ from hierarchy.registry.model_registry import ModelRegistry
 
 
 class ContextBudget:
-    """Context window manager.
-
-    Trims/summarises message lists to fit within a model's context window.
-    Uses a simple token-counting heuristic (chars / 4 ≈ tokens).
-
-    In the full system this is enhanced with:
-      - tiktoken for accurate tokenisation
-      - Recursive summarisation of long histories
-      - Per-node budget allocation (children outputs, peer notes)
-    """
 
     def __init__(self, registry: Optional[ModelRegistry] = None):
         self._registry = registry
@@ -33,7 +23,6 @@ class ContextBudget:
 
     @staticmethod
     def estimate_tokens(text: str) -> int:
-        """Rough token estimate: ~4 chars per token."""
         return len(text) // 4
 
     def trim_to_window(
@@ -42,16 +31,6 @@ class ContextBudget:
         model_id: str,
         reserve: int = 2000,
     ) -> List[Dict]:
-        """Trim message list to fit within the model's context window.
-
-        Args:
-            messages: List of message dicts with 'role' and 'content' keys.
-            model_id: Model whose context window to respect.
-            reserve: Tokens to reserve for the response.
-
-        Returns:
-            Trimmed message list (earliest non-system messages removed first).
-        """
         window = self._get_window(model_id)
         budget = window - reserve
 

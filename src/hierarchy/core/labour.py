@@ -11,15 +11,6 @@ from hierarchy.schemas.node_state import NodeState
 
 
 class Labour(Node):
-    """Leaf worker node.
-
-    Executes one atomic LLM call with no further delegation.
-    This is the simplest concrete Node subclass.
-
-    Lifecycle:
-        assigned -> thinking -> executing -> completed
-        Any state -> failed on error (with retry support)
-    """
 
     def __init__(
         self,
@@ -52,14 +43,6 @@ class Labour(Node):
         self._context_budget = ContextBudget(registry)
 
     async def run(self, task_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute one atomic LLM call.
-
-        Args:
-            task_context: Must contain 'task' (str prompt for the LLM).
-
-        Returns:
-            {'output': str, 'confidence': float, 'model_id': str}
-        """
         self.status = NodeState.thinking
         task_text = task_context.get("task", "")
         self.add_thought(f"Starting work on task")

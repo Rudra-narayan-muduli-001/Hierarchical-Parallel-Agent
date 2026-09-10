@@ -5,12 +5,6 @@ from typing import Any, Optional
 
 
 def loads_json(text: Any) -> Optional[dict]:
-    """Parse JSON from an LLM response, tolerating markdown code fences.
-
-    Real providers often wrap structured output in ```json fences or
-    surrounding prose. Returns the parsed dict, or None when the text
-    does not contain valid JSON.
-    """
     if not isinstance(text, str):
         return None
     t = text.strip()

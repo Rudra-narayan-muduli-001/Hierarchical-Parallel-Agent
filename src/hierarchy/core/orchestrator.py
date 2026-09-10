@@ -1,16 +1,3 @@
-"""Orchestrator — top-level driver for the entire hierarchy.
-
-Owns:
-  - Config, Registry, Pool Allocator, Event Bus, Peer Bus
-  - Persistence (Repository, EventStore)
-  - Failover Manager, Cost Tracker, Task Router
-
-Lifecycle:
-  1. Instantiate with config path
-  2. run_task(task_text, category=None) -> runs the full hierarchy
-  3. On completion / failure, final result is returned with cost summary
-"""
-
 from __future__ import annotations
 
 import logging
@@ -37,10 +24,6 @@ logger = logging.getLogger(__name__)
 
 
 class TrackedProvider:
-    """Wraps a Provider and reports usage to a CostTracker.
-
-    Each complete() call extracts usage from the result and reports it.
-    """
 
     def __init__(self, provider: Provider, model_id: str, cost_tracker: CostTracker, node_id: str = "unknown"):
         self._provider = provider
@@ -69,7 +52,6 @@ class TrackedProvider:
 
 
 class Orchestrator:
-    """Top-level driver for the multi-LLM orchestration system."""
 
     def __init__(
         self,
@@ -118,15 +100,6 @@ class Orchestrator:
         task_text: str,
         category: str = "coding",
     ) -> Dict[str, Any]:
-        """Run a task through the full hierarchy.
-
-        Args:
-            task_text: The raw user task.
-            category: Category to route to (overrides classification).
-
-        Returns:
-            Dict with keys: output, confidence, cost_summary, etc.
-        """
         if category not in self.config.categories:
             available = list(self.config.categories.keys())
             raise ValueError(
@@ -143,7 +116,7 @@ class Orchestrator:
         boss_node = Boss(
             node_id=boss_node_id,
             category=category,
-            tier=self.registry.get_model(boss_model).tier,  # type: ignore
+            tier=self.registry.get_model(boss_model).tier,
             model_id=boss_model,
             provider=provider,
             event_bus=self.event_bus,

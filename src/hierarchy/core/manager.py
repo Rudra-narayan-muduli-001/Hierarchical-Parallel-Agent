@@ -1,5 +1,3 @@
-"""Manager — spawns Supervisors, handles failover, performs synthesis."""
-
 from __future__ import annotations
 
 import asyncio
@@ -19,7 +17,6 @@ from hierarchy.schemas.node_state import NodeState
 
 
 class Manager(Node):
-    """Mid-level planner that spawns Supervisors and synthesizes their output."""
 
     def __init__(
         self,

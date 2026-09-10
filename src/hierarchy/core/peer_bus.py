@@ -1,14 +1,3 @@
-"""Peer Communication Bus — sibling + same-rank pub/sub messaging.
-
-Implements ARCHITECTURE §8:
-  - Sibling channel: nodes sharing the same immediate parent and rank
-  - Category-rank channel: all active nodes of the same rank within the same category
-
-Peer messages are short, structured, and visible in the GUI as chat bubbles.
-They are optionally included as extra context in a node's next reasoning
-or synthesis call (bounded by the Context Budget Manager).
-"""
-
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -18,7 +7,6 @@ from typing import Callable, Dict, List, Optional
 
 @dataclass
 class PeerMessage:
-    """A single peer-to-peer message between nodes."""
 
     from_node_id: str
     scope: str
@@ -31,27 +19,18 @@ PeerHandler = Callable[[PeerMessage], None]
 
 
 def category_rank_scope(category: str, rank: str) -> str:
-    """Build a category-rank scope key (e.g., 'coding:supervisor')."""
     return f"{category}:{rank}"
 
 
 def parent_scope(parent_id: str) -> str:
-    """Build a parent scope key (sibling channel)."""
     return f"parent:{parent_id}"
 
 
 def parent_rank_scope(parent_id: str, rank: str) -> str:
-    """Build a parent+rank scope key."""
     return f"parent:{parent_id}:{rank}"
 
 
 class PeerBus:
-    """Scoped pub/sub for peer messages.
-
-    Channels are scoped by string keys. Two primary scope types:
-      - (category, rank): broadcast to all same-rank nodes in a category
-      - (parent_id): sibling coordination under the same parent
-    """
 
     def __init__(self, max_history_per_scope: int = 100):
         self._channels: Dict[str, List[PeerHandler]] = {}
@@ -77,7 +56,6 @@ class PeerBus:
         text: str,
         task_ref: Optional[str] = None,
     ) -> PeerMessage:
-        """Publish a message to a scope and notify all subscribers."""
         msg = PeerMessage(
             from_node_id=from_node_id,
             scope=scope,
@@ -96,7 +74,6 @@ class PeerBus:
     def get_messages(
         self, scope: str, since: Optional[datetime] = None, limit: int = 50
     ) -> List[PeerMessage]:
-        """Retrieve messages from a scope, optionally since a timestamp."""
         msgs = list(self._history.get(scope, []))
         if since:
             msgs = [m for m in msgs if m.ts > since]

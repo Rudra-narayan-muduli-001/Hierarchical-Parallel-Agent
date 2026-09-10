@@ -1,21 +1,3 @@
-"""Failover Manager — error classification, swap rules, degradation tracking.
-
-Implements ARCHITECTURE §6:
-  Labour     → Supervisor swaps model, re-runs
-  Supervisor → Manager swaps model, keeps Labours
-  Manager    → Boss swaps model, keeps Supervisors
-  Boss       → fail triggers election (handled by orchestrator)
-
-Global rules:
-  - Never cancel on single failure — always replace and retry
-  - max_retries_per_node with exponential backoff
-  - 60%-failure warning (non-blocking)
-  - Single-model degraded notice (same mode, just fewer models)
-  - Zero-model hard failure (only real termination)
-
-No branching on "degraded" — it's emergent from the same code path.
-"""
-
 from __future__ import annotations
 
 from collections import defaultdict
@@ -36,12 +18,6 @@ from hierarchy.schemas.events import make_event, TASK_WARNING, TASK_DEGRADED
 
 
 class FailoverManager:
-    """Classifies errors, executes swap rules, and tracks failure ratios.
-
-    Usage:
-        fm = FailoverManager(config, registry, pool_allocator, event_bus)
-        replacement = fm.handle_failure(failed_node_role, error, node_id)
-    """
 
     def __init__(
         self,

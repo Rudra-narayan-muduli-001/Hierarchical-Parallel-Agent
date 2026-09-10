@@ -1,5 +1,3 @@
-"""Supervisor — spawns Labours, handles failover, performs synthesis."""
-
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +18,6 @@ from hierarchy.schemas.node_state import NodeState
 
 
 class Supervisor(Node):
-    """Mid-level planner that spawns Labours and synthesizes their output."""
 
     def __init__(
         self,
@@ -54,7 +51,6 @@ class Supervisor(Node):
         self._max_retries = max_retries
 
     async def run(self, task_context: Dict[str, Any]) -> Dict[str, Any]:
-        """Execute the Supervisor lifecycle."""
         self.status = NodeState.thinking
         task_text = task_context.get("task", "")
         self.add_thought(f"Supervisor starting: {task_text[:80]}")
