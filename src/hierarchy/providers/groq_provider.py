@@ -1,12 +1,3 @@
-"""Groq Provider — OpenAI-compatible API.
-
-Groq serves Llama/Mixtral models through an OpenAI-compatible
-chat/completions endpoint, so we reuse OpenAIProvider. Separate class
-exists for tier differentiation and future Groq-specific features.
-
-Requires: GROQ_API_KEY env var.
-"""
-
 from __future__ import annotations
 
 import os
@@ -16,7 +7,6 @@ from .openai_provider import OpenAIProvider
 
 
 class GroqProvider(OpenAIProvider):
-    """Groq provider — OpenAI-compatible API at api.groq.com."""
 
     BASE_URL = "https://api.groq.com/openai/v1"
 

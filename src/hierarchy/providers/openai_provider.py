@@ -1,11 +1,3 @@
-"""OpenAI Provider — real HTTP calls to chat/completions endpoint.
-
-Maps OpenAI API errors into the normalized ProviderError taxonomy.
-Supports structured output via response_format=json_object.
-
-Requires: OPENAI_API_KEY env var (or passed api_key).
-"""
-
 from __future__ import annotations
 
 import asyncio
@@ -25,12 +17,6 @@ _RATE_LIMIT_MAX_WAIT = 10.0
 
 
 def _extract_retry_after(response: httpx.Response) -> float:
-    """Best-effort wait time (seconds) from a 429 response, capped.
-
-    Providers may send large values (e.g. seconds until a daily quota
-    resets); sleeping that long is never useful, so cap at 10s and let
-    the retry budget fail fast instead.
-    """
     header = response.headers.get("retry-after")
     if header:
         try:
@@ -47,7 +33,6 @@ def _extract_retry_after(response: httpx.Response) -> float:
 
 
 class OpenAIProvider(Provider):
-    """Real OpenAI provider mapping into normalized error taxonomy."""
 
     BASE_URL = "https://api.openai.com/v1"
 

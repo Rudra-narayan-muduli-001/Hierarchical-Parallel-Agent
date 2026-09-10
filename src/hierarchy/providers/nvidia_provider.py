@@ -1,13 +1,3 @@
-"""NVIDIA NIM Provider — OpenAI-compatible API.
-
-NVIDIA's hosted NIM (build.nvidia.com / integrate.api.nvidia.com) serves
-models through an OpenAI-compatible chat/completions endpoint, so we reuse
-OpenAIProvider. Separate class exists for tier differentiation and future
-NIM-specific features.
-
-Requires: NVIDIA_API_KEY env var.
-"""
-
 from __future__ import annotations
 
 import os
@@ -17,7 +7,6 @@ from .openai_provider import OpenAIProvider
 
 
 class NVIDIAProvider(OpenAIProvider):
-    """NVIDIA NIM provider — OpenAI-compatible API at integrate.api.nvidia.com."""
 
     BASE_URL = "https://integrate.api.nvidia.com/v1"
 

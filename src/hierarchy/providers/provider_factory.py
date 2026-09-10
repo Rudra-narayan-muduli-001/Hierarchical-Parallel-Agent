@@ -13,16 +13,6 @@ def create_provider(
     fault: Optional[str] = None,
     canned_response: Optional[dict] = None,
 ) -> Provider:
-    """Map a ModelSpec to a Provider instance.
-
-    Args:
-        model_spec: The model specification (provider type, tier, etc.)
-        fault: Optional fault to inject (for mock provider testing)
-        canned_response: Optional canned response (for mock)
-
-    Returns:
-        A Provider instance ready to make LLM calls.
-    """
     provider_type = model_spec.provider.lower()
 
     if provider_type == "mock":

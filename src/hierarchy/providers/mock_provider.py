@@ -8,14 +8,6 @@ from .errors import ApiError, RateLimitError, TimeoutError
 
 
 class MockProvider(Provider):
-    """Deterministic provider for testing with configurable fault injection.
-
-    Supports:
-      - Canned structured JSON responses (for decomposition/synthesis tests)
-      - Fault injection: timeout, rate_limit, api_error on command
-      - Multi-turn conversation tracking
-      - Token usage tracking (prompt/completion) for cost calculation
-    """
 
     def __init__(
         self,

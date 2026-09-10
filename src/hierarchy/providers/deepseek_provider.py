@@ -1,12 +1,3 @@
-"""DeepSeek Provider — OpenAI-compatible API.
-
-DeepSeek's API is OpenAI-compatible, so we reuse most of OpenAIProvider.
-Separate class exists for future DeepSeek-specific features and for
-tier differentiation in the model registry.
-
-Requires: DEEPSEEK_API_KEY env var.
-"""
-
 from __future__ import annotations
 
 import os
@@ -16,7 +7,6 @@ from .openai_provider import OpenAIProvider
 
 
 class DeepSeekProvider(OpenAIProvider):
-    """DeepSeek provider — OpenAI-compatible API at deepseek.com."""
 
     BASE_URL = "https://api.deepseek.com/v1"
 

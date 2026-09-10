@@ -1,13 +1,3 @@
-"""OpenCode Zen Provider — OpenAI-compatible API.
-
-OpenCode Zen (https://opencode.ai/docs/zen) is a curated model gateway.
-Its OpenAI-compatible models use the /v1/chat/completions endpoint, so we
-reuse OpenAIProvider. Separate class exists for tier differentiation and
-future Zen-specific features.
-
-Requires: OPENCODE_API_KEY env var.
-"""
-
 from __future__ import annotations
 
 import os
@@ -17,7 +7,6 @@ from .openai_provider import OpenAIProvider
 
 
 class OpenCodeZenProvider(OpenAIProvider):
-    """OpenCode Zen provider — OpenAI-compatible API at opencode.ai/zen/v1."""
 
     BASE_URL = "https://opencode.ai/zen/v1"
 

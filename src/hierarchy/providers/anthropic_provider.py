@@ -1,11 +1,3 @@
-"""Anthropic Provider — real HTTP calls to Anthropic Messages API.
-
-Maps Anthropic API to the normalized ProviderError taxonomy.
-Supports structured output via tool-use with JSON schema.
-
-Requires: ANTHROPIC_API_KEY env var.
-"""
-
 from __future__ import annotations
 
 import json as _json
@@ -19,7 +11,6 @@ from .errors import ApiError, RateLimitError, TimeoutError
 
 
 class AnthropicProvider(Provider):
-    """Real Anthropic provider implementing the Messages API."""
 
     BASE_URL = "https://api.anthropic.com/v1"
     ANTHROPIC_VERSION = "2023-06-01"
@@ -106,7 +97,7 @@ class AnthropicProvider(Provider):
     async def stream(
         self, messages: List[dict], **kwargs
     ) -> AsyncIterator[dict[str, Any]]:
-        # Anthropic streaming requires SSE parsing — defer to full Phase 11
+
         result = await self.complete(messages, **kwargs)
         yield result
 
