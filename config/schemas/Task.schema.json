@@ -1,0 +1,30 @@
+{
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "category": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Category"
+    }
+  },
+  "required": [
+    "id",
+    "description"
+  ],
+  "title": "Task",
+  "type": "object"
+}

@@ -1,0 +1,190 @@
+{
+  "$defs": {
+    "BehaviorConfig": {
+      "properties": {
+        "continue_on_degraded": {
+          "default": true,
+          "title": "Continue On Degraded",
+          "type": "boolean"
+        },
+        "allow_model_reuse_on_pool_exhaustion": {
+          "default": true,
+          "title": "Allow Model Reuse On Pool Exhaustion",
+          "type": "boolean"
+        }
+      },
+      "title": "BehaviorConfig",
+      "type": "object"
+    },
+    "CategoryConfig": {
+      "properties": {
+        "boss_model": {
+          "title": "Boss Model",
+          "type": "string"
+        },
+        "boss_system_prompt": {
+          "title": "Boss System Prompt",
+          "type": "string"
+        },
+        "worker_pools": {
+          "anyOf": [
+            {
+              "additionalProperties": {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Worker Pools"
+        }
+      },
+      "required": [
+        "boss_model",
+        "boss_system_prompt"
+      ],
+      "title": "CategoryConfig",
+      "type": "object"
+    },
+    "FailoverConfig": {
+      "properties": {
+        "max_retries_per_node": {
+          "default": 2,
+          "title": "Max Retries Per Node",
+          "type": "integer"
+        },
+        "retry_backoff_seconds": {
+          "items": {
+            "type": "integer"
+          },
+          "title": "Retry Backoff Seconds",
+          "type": "array"
+        },
+        "warning_threshold_percent": {
+          "default": 60,
+          "title": "Warning Threshold Percent",
+          "type": "integer"
+        },
+        "cooldown_after_failure_seconds": {
+          "default": 300,
+          "title": "Cooldown After Failure Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "FailoverConfig",
+      "type": "object"
+    },
+    "ModelSpec": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "provider": {
+          "title": "Provider",
+          "type": "string"
+        },
+        "tier": {
+          "title": "Tier",
+          "type": "string"
+        },
+        "context_window": {
+          "title": "Context Window",
+          "type": "integer"
+        },
+        "api_key_env": {
+          "title": "Api Key Env",
+          "type": "string"
+        },
+        "rate_limit_rpm": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rate Limit Rpm"
+        }
+      },
+      "required": [
+        "id",
+        "provider",
+        "tier",
+        "context_window",
+        "api_key_env"
+      ],
+      "title": "ModelSpec",
+      "type": "object"
+    },
+    "TiersConfig": {
+      "properties": {
+        "order": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Order",
+          "type": "array"
+        }
+      },
+      "required": [
+        "order"
+      ],
+      "title": "TiersConfig",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "tiers": {
+      "$ref": "#/$defs/TiersConfig"
+    },
+    "categories": {
+      "additionalProperties": {
+        "$ref": "#/$defs/CategoryConfig"
+      },
+      "title": "Categories",
+      "type": "object"
+    },
+    "models": {
+      "items": {
+        "$ref": "#/$defs/ModelSpec"
+      },
+      "title": "Models",
+      "type": "array"
+    },
+    "failover": {
+      "$ref": "#/$defs/FailoverConfig"
+    },
+    "behavior": {
+      "$ref": "#/$defs/BehaviorConfig"
+    },
+    "mcp_servers": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Mcp Servers"
+    }
+  },
+  "required": [
+    "tiers",
+    "categories",
+    "models",
+    "failover",
+    "behavior"
+  ],
+  "title": "Config",
+  "type": "object"
+}

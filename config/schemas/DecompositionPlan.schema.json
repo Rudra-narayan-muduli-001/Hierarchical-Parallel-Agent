@@ -1,0 +1,64 @@
+{
+  "$defs": {
+    "DecomposedSubTask": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "assigned_tier": {
+          "title": "Assigned Tier",
+          "type": "string"
+        },
+        "assigned_role": {
+          "title": "Assigned Role",
+          "type": "string"
+        },
+        "depends_on": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Depends On",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "assigned_tier",
+        "assigned_role"
+      ],
+      "title": "DecomposedSubTask",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "task_id": {
+      "title": "Task Id",
+      "type": "string"
+    },
+    "sub_tasks": {
+      "items": {
+        "$ref": "#/$defs/DecomposedSubTask"
+      },
+      "title": "Sub Tasks",
+      "type": "array"
+    },
+    "reasoning": {
+      "default": "",
+      "title": "Reasoning",
+      "type": "string"
+    }
+  },
+  "required": [
+    "task_id",
+    "sub_tasks"
+  ],
+  "title": "DecompositionPlan",
+  "type": "object"
+}

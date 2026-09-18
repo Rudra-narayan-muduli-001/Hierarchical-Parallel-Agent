@@ -1,0 +1,25 @@
+{
+  "properties": {
+    "type": {
+      "title": "Type",
+      "type": "string"
+    },
+    "data": {
+      "additionalProperties": true,
+      "title": "Data",
+      "type": "object"
+    },
+    "ts": {
+      "format": "date-time",
+      "title": "Ts",
+      "type": "string"
+    }
+  },
+  "required": [
+    "type",
+    "data",
+    "ts"
+  ],
+  "title": "Event",
+  "type": "object"
+}

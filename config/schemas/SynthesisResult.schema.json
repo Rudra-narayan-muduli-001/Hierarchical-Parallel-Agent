@@ -1,0 +1,23 @@
+{
+  "properties": {
+    "merged_output": {
+      "title": "Merged Output",
+      "type": "string"
+    },
+    "rationale": {
+      "title": "Rationale",
+      "type": "string"
+    },
+    "confidence": {
+      "title": "Confidence",
+      "type": "number"
+    }
+  },
+  "required": [
+    "merged_output",
+    "rationale",
+    "confidence"
+  ],
+  "title": "SynthesisResult",
+  "type": "object"
+}

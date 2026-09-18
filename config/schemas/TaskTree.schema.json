@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "SubTask": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "parent_task_id": {
+          "title": "Parent Task Id",
+          "type": "string"
+        },
+        "assigned_tier": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assigned Tier"
+        },
+        "assigned_role": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Assigned Role"
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "parent_task_id"
+      ],
+      "title": "SubTask",
+      "type": "object"
+    },
+    "Task": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Category"
+        }
+      },
+      "required": [
+        "id",
+        "description"
+      ],
+      "title": "Task",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "task": {
+      "$ref": "#/$defs/Task"
+    },
+    "sub_tasks": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SubTask"
+      },
+      "title": "Sub Tasks",
+      "type": "array"
+    }
+  },
+  "required": [
+    "task"
+  ],
+  "title": "TaskTree",
+  "type": "object"
+}

@@ -1,0 +1,199 @@
+{
+  "$defs": {
+    "NodeState": {
+      "enum": [
+        "idle",
+        "assigned",
+        "thinking",
+        "executing",
+        "waiting_children",
+        "synthesizing",
+        "completed",
+        "failed",
+        "replaced",
+        "degraded"
+      ],
+      "title": "NodeState",
+      "type": "string"
+    },
+    "ReplacementEntry": {
+      "properties": {
+        "from_model": {
+          "title": "From Model",
+          "type": "string"
+        },
+        "to_model": {
+          "title": "To Model",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        }
+      },
+      "required": [
+        "from_model",
+        "to_model",
+        "reason",
+        "ts"
+      ],
+      "title": "ReplacementEntry",
+      "type": "object"
+    },
+    "ThoughtEntry": {
+      "properties": {
+        "text": {
+          "title": "Text",
+          "type": "string"
+        },
+        "ts": {
+          "format": "date-time",
+          "title": "Ts",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "ts"
+      ],
+      "title": "ThoughtEntry",
+      "type": "object"
+    }
+  },
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "role": {
+      "title": "Role",
+      "type": "string"
+    },
+    "category": {
+      "title": "Category",
+      "type": "string"
+    },
+    "tier": {
+      "title": "Tier",
+      "type": "string"
+    },
+    "model_id": {
+      "title": "Model Id",
+      "type": "string"
+    },
+    "reused": {
+      "default": false,
+      "title": "Reused",
+      "type": "boolean"
+    },
+    "parent_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Id"
+    },
+    "children_ids": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Children Ids",
+      "type": "array"
+    },
+    "status": {
+      "$ref": "#/$defs/NodeState",
+      "default": "idle"
+    },
+    "thought_stream": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ThoughtEntry"
+      },
+      "title": "Thought Stream",
+      "type": "array"
+    },
+    "output": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Output"
+    },
+    "error": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error"
+    },
+    "replaced_history": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/ReplacementEntry"
+      },
+      "title": "Replaced History",
+      "type": "array"
+    },
+    "retries": {
+      "default": 0,
+      "title": "Retries",
+      "type": "integer"
+    },
+    "created_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Created At"
+    },
+    "updated_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Updated At"
+    }
+  },
+  "required": [
+    "id",
+    "role",
+    "category",
+    "tier",
+    "model_id"
+  ],
+  "title": "NodeSnapshot",
+  "type": "object"
+}

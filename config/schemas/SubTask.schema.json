@@ -1,0 +1,47 @@
+{
+  "properties": {
+    "id": {
+      "title": "Id",
+      "type": "string"
+    },
+    "description": {
+      "title": "Description",
+      "type": "string"
+    },
+    "parent_task_id": {
+      "title": "Parent Task Id",
+      "type": "string"
+    },
+    "assigned_tier": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assigned Tier"
+    },
+    "assigned_role": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Assigned Role"
+    }
+  },
+  "required": [
+    "id",
+    "description",
+    "parent_task_id"
+  ],
+  "title": "SubTask",
+  "type": "object"
+}
