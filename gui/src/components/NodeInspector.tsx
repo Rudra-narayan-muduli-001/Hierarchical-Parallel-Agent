@@ -17,7 +17,7 @@ export function NodeInspector() {
         <div className="detail-empty-inner">
           <NetworkIcon size={26} />
           <div>
-            <h4 style={{ marginBottom: 4, color: 'var(--text)' }}>Inspector</h4>
+            <h4 style={{ marginBottom: 4, color: 'var(--text)', fontSize: 15, fontWeight: 650, lineHeight: '20px' }}>Inspector</h4>
             <p>Pick a node in the hierarchy to see its thoughts, output and live state.</p>
           </div>
         </div>
