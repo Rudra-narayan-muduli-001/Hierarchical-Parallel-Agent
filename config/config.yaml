@@ -3,10 +3,10 @@ tiers:
 
 categories:
   coding:
-    boss_model: llama-3.1-8b-instant
+    boss_model: gpt-6-astra
     boss_system_prompt: prompts/boss/coding_boss.md
   research:
-    boss_model: llama-3.1-8b-instant
+    boss_model: gpt-6-astra
     boss_system_prompt: prompts/boss/research_boss.md
     worker_pools:
       search:
@@ -19,52 +19,577 @@ categories:
         pool_size: 1
 
 models:
+  # OpenAI Models (via OpenAI API)
+  - id: gpt-6-astra
+    provider: openai
+    tier: S
+    context_window: 1050000
+    api_key_env: OPENAI_API_KEY
+    rate_limit_rpm: 500
+  - id: gpt-6-sol
+    provider: openai
+    tier: A
+    context_window: 1050000
+    api_key_env: OPENAI_API_KEY
+    rate_limit_rpm: 1000
+  - id: gpt-6-luna
+    provider: openai
+    tier: C
+    context_window: 1050000
+    api_key_env: OPENAI_API_KEY
+    rate_limit_rpm: 2000
+
+  # Anthropic Models (via Anthropic API)
+  - id: claude-fable-5-1
+    provider: anthropic
+    tier: S
+    context_window: 1000000
+    api_key_env: ANTHROPIC_API_KEY
+    rate_limit_rpm: 50
+  - id: claude-opus-5-5
+    provider: anthropic
+    tier: A
+    context_window: 1000000
+    api_key_env: ANTHROPIC_API_KEY
+    rate_limit_rpm: 50
+  - id: claude-sonnet-5
+    provider: anthropic
+    tier: B
+    context_window: 1000000
+    api_key_env: ANTHROPIC_API_KEY
+    rate_limit_rpm: 100
+  - id: claude-haiku-4-5
+    provider: anthropic
+    tier: D
+    context_window: 200000
+    api_key_env: ANTHROPIC_API_KEY
+    rate_limit_rpm: 200
+
+  # Groq Models (fast inference)
   - id: llama-3.1-8b-instant
     provider: groq
     tier: S
     context_window: 131072
     api_key_env: GROQ_API_KEY
     rate_limit_rpm: 30
-  - id: qwen/qwen3.6-27b
+  - id: llama-3.3-70b-versatile
     provider: groq
-    tier: B
+    tier: A
+    context_window: 131072
+    api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
+  - id: openai/gpt-oss-120b
+    provider: groq
+    tier: A
     context_window: 131072
     api_key_env: GROQ_API_KEY
     rate_limit_rpm: 30
   - id: openai/gpt-oss-20b
     provider: groq
-    tier: D
+    tier: C
     context_window: 131072
     api_key_env: GROQ_API_KEY
     rate_limit_rpm: 30
+  - id: qwen/qwen3.8-27b
+    provider: groq
+    tier: B
+    context_window: 131072
+    api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
+  - id: minimaxai/minimax-m2.7
+    provider: groq
+    tier: B
+    context_window: 196608
+    api_key_env: GROQ_API_KEY
+    rate_limit_rpm: 30
 
-  # NVIDIA NIM (hosted build.nvidia.com) — set NVIDIA_API_KEY in .env to activate
-  # - id: nvidia/llama-3.3-nemotron-super-49b-v1
-  #   provider: nvidia
-  #   tier: S
-  #   context_window: 131072
-  #   api_key_env: NVIDIA_API_KEY
-  #   rate_limit_rpm: 60
-  # - id: meta/llama-3.3-70b-instruct
-  #   provider: nvidia
-  #   tier: A
-  #   context_window: 131072
-  #   api_key_env: NVIDIA_API_KEY
-  #   rate_limit_rpm: 60
+  # Together AI Models
+  - id: deepseek-ai/DeepSeek-V4-Pro-0813
+    provider: together
+    tier: S
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: deepseek-ai/DeepSeek-V4.1-Flash
+    provider: together
+    tier: B
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 200
+  - id: zai-org/GLM-5.3
+    provider: together
+    tier: S
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: zai-org/GLM-5.3-Flash
+    provider: together
+    tier: C
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 300
+  - id: Qwen/Qwen3.8-2.4T-A95B
+    provider: together
+    tier: S
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 50
+  - id: nvidia/nemotron-3-ultra-550b-a55b
+    provider: together
+    tier: S
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 30
+  - id: meta-models/Muse-Glimmer-30B
+    provider: together
+    tier: B
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: google/gemma-4-31B-it
+    provider: together
+    tier: B
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: deepseek-ai/DeepSeek-V4-Pro
+    provider: together
+    tier: S
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 50
+  - id: Qwen/Qwen3.7-Plus
+    provider: together
+    tier: A
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: zai-org/GLM-5.2
+    provider: together
+    tier: A
+    context_window: 1048576
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: Prism-ML/Ternary-Bonsai-27B
+    provider: together
+    tier: C
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 200
 
-  # OpenCode Zen — set OPENCODE_API_KEY in .env to activate (free models available)
-  # - id: deepseek-v4-flash-free
-  #   provider: opencode_zen
-  #   tier: S
-  #   context_window: 131072
-  #   api_key_env: OPENCODE_API_KEY
-  #   rate_limit_rpm: 60
-  # - id: gpt-5.4-nano
-  #   provider: opencode_zen
-  #   tier: D
-  #   context_window: 131072
-  #   api_key_env: OPENCODE_API_KEY
-  #   rate_limit_rpm: 60
+  # Fireworks AI Models
+  - id: fireworks/ember-1
+    provider: fireworks
+    tier: A
+    context_window: 1048576
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 100
+  - id: deepseek-ai/deepseek-v4p1-flash
+    provider: fireworks
+    tier: B
+    context_window: 1048576
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 200
+  - id: fireworks/glm-5p3-flash
+    provider: fireworks
+    tier: C
+    context_window: 1048576
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 300
+  - id: fireworks/glm-5p3
+    provider: fireworks
+    tier: S
+    context_window: 1048576
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 100
+  - id: fireworks/qwen3p8-flash-next-fp8
+    provider: fireworks
+    tier: B
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 200
+  - id: fireworks/kimi-k3
+    provider: fireworks
+    tier: A
+    context_window: 1048576
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 100
+  - id: deepseek-ai/deepseek-v4-pro-0813
+    provider: fireworks
+    tier: S
+    context_window: 1048576
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/qwen3p8-max
+    provider: fireworks
+    tier: S
+    context_window: 1048576
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/muse-glimmer-30b
+    provider: fireworks
+    tier: B
+    context_window: 131072
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 100
+  - id: fireworks/nemotron-3-ultra-nvfp4
+    provider: fireworks
+    tier: S
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 30
+  - id: fireworks/nemotron-3-ultra-bf16
+    provider: fireworks
+    tier: S
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 30
+  - id: fireworks/nemotron-3-super-120b-a12b-nvfp4
+    provider: fireworks
+    tier: A
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/nemotron-3-super-120b-a12b-fp8
+    provider: fireworks
+    tier: A
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/nemotron-3-super-120b-a12b-bf16
+    provider: fireworks
+    tier: A
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/llama-v3p3-70b-instruct
+    provider: fireworks
+    tier: A
+    context_window: 131072
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 100
+  - id: fireworks/mistral-large-3-fp8
+    provider: fireworks
+    tier: S
+    context_window: 256000
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/ministral-3-14b-instruct-2512
+    provider: fireworks
+    tier: B
+    context_window: 256000
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 100
+  - id: fireworks/ministral-3-8b-instruct-2512
+    provider: fireworks
+    tier: C
+    context_window: 256000
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 200
+  - id: fireworks/ministral-3-3b-instruct-2512
+    provider: fireworks
+    tier: D
+    context_window: 256000
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 300
+  - id: fireworks/gemma-4-31b-it
+    provider: fireworks
+    tier: B
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 100
+  - id: fireworks/qwen3-235b-a22b
+    provider: fireworks
+    tier: S
+    context_window: 131072
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/qwen3-235b-a22b-instruct
+    provider: fireworks
+    tier: S
+    context_window: 131072
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/qwen3-coder-480b-a35b-instruct
+    provider: fireworks
+    tier: S
+    context_window: 262144
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 30
+  - id: fireworks/deepseek-r1
+    provider: fireworks
+    tier: A
+    context_window: 163840
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+  - id: fireworks/deepseek-r1-0528
+    provider: fireworks
+    tier: A
+    context_window: 163840
+    api_key_env: FIREWORKS_API_KEY
+    rate_limit_rpm: 50
+
+  # NVIDIA NIM Models (hosted on build.nvidia.com)
+  - id: nvidia/llama-3.3-nemotron-super-49b-v1
+    provider: nvidia
+    tier: S
+    context_window: 131072
+    api_key_env: NVIDIA_API_KEY
+    rate_limit_rpm: 60
+  - id: meta/llama-3.3-70b-instruct
+    provider: nvidia
+    tier: A
+    context_window: 131072
+    api_key_env: NVIDIA_API_KEY
+    rate_limit_rpm: 60
+  - id: nvidia/nemotron-3-ultra-550b-a55b
+    provider: nvidia
+    tier: S
+    context_window: 262144
+    api_key_env: NVIDIA_API_KEY
+    rate_limit_rpm: 60
+  - id: nvidia/nemotron-3-super-120b-a12b
+    provider: nvidia
+    tier: A
+    context_window: 262144
+    api_key_env: NVIDIA_API_KEY
+    rate_limit_rpm: 60
+  - id: nvidia/nemotron-3-5-lightning
+    provider: nvidia
+    tier: B
+    context_window: 262144
+    api_key_env: NVIDIA_API_KEY
+    rate_limit_rpm: 100
+
+  # DeepSeek Models (via DeepSeek API)
+  - id: deepseek-chat
+    provider: deepseek
+    tier: B
+    context_window: 65536
+    api_key_env: DEEPSEEK_API_KEY
+    rate_limit_rpm: 60
+  - id: deepseek-reasoner
+    provider: deepseek
+    tier: A
+    context_window: 65536
+    api_key_env: DEEPSEEK_API_KEY
+    rate_limit_rpm: 60
+
+  # Mistral AI Models
+  - id: mistral-large-latest
+    provider: mistral
+    tier: S
+    context_window: 131072
+    api_key_env: MISTRAL_API_KEY
+    rate_limit_rpm: 60
+  - id: mistral-small-latest
+    provider: mistral
+    tier: C
+    context_window: 131072
+    api_key_env: MISTRAL_API_KEY
+    rate_limit_rpm: 100
+  - id: codestral-latest
+    provider: mistral
+    tier: A
+    context_window: 32768
+    api_key_env: MISTRAL_API_KEY
+    rate_limit_rpm: 60
+  - id: ministral-3-14b-instruct-2512
+    provider: mistral
+    tier: B
+    context_window: 256000
+    api_key_env: MISTRAL_API_KEY
+    rate_limit_rpm: 100
+  - id: ministral-3-8b-instruct-2512
+    provider: mistral
+    tier: C
+    context_window: 256000
+    api_key_env: MISTRAL_API_KEY
+    rate_limit_rpm: 200
+
+  # Cohere Models
+  - id: command-r-plus
+    provider: cohere
+    tier: S
+    context_window: 131072
+    api_key_env: COHERE_API_KEY
+    rate_limit_rpm: 60
+  - id: command-r
+    provider: cohere
+    tier: B
+    context_window: 131072
+    api_key_env: COHERE_API_KEY
+    rate_limit_rpm: 100
+  - id: command-a-03-2025
+    provider: cohere
+    tier: S
+    context_window: 262144
+    api_key_env: COHERE_API_KEY
+    rate_limit_rpm: 60
+
+  # xAI (Grok) Models
+  - id: grok-4
+    provider: xai
+    tier: S
+    context_window: 131072
+    api_key_env: XAI_API_KEY
+    rate_limit_rpm: 60
+  - id: grok-3
+    provider: xai
+    tier: A
+    context_window: 131072
+    api_key_env: XAI_API_KEY
+    rate_limit_rpm: 60
+  - id: grok-2
+    provider: xai
+    tier: B
+    context_window: 131072
+    api_key_env: XAI_API_KEY
+    rate_limit_rpm: 100
+  - id: grok-2-mini
+    provider: xai
+    tier: D
+    context_window: 131072
+    api_key_env: XAI_API_KEY
+    rate_limit_rpm: 200
+
+  # Perplexity Models (via Perplexity API)
+  - id: llama-3.1-sonar-large-128k-online
+    provider: perplexity
+    tier: A
+    context_window: 131072
+    api_key_env: PERPLEXITY_API_KEY
+    rate_limit_rpm: 60
+  - id: llama-3.1-sonar-small-128k-online
+    provider: perplexity
+    tier: C
+    context_window: 131072
+    api_key_env: PERPLEXITY_API_KEY
+    rate_limit_rpm: 100
+  - id: llama-3.1-sonar-large-128k-chat
+    provider: perplexity
+    tier: B
+    context_window: 131072
+    api_key_env: PERPLEXITY_API_KEY
+    rate_limit_rpm: 60
+  - id: llama-3.1-sonar-small-128k-chat
+    provider: perplexity
+    tier: D
+    context_window: 131072
+    api_key_env: PERPLEXITY_API_KEY
+    rate_limit_rpm: 100
+
+  # Google AI Models (via Google AI Studio / Vertex AI)
+  - id: gemini-2.5-pro
+    provider: google
+    tier: S
+    context_window: 2097152
+    api_key_env: GOOGLE_API_KEY
+    rate_limit_rpm: 60
+  - id: gemini-2.5-flash
+    provider: google
+    tier: A
+    context_window: 1048576
+    api_key_env: GOOGLE_API_KEY
+    rate_limit_rpm: 100
+  - id: gemini-2.5-flash-lite
+    provider: google
+    tier: C
+    context_window: 1048576
+    api_key_env: GOOGLE_API_KEY
+    rate_limit_rpm: 200
+  - id: gemini-2.0-flash
+    provider: google
+    tier: B
+    context_window: 1048576
+    api_key_env: GOOGLE_API_KEY
+    rate_limit_rpm: 100
+  - id: gemini-2.0-flash-lite
+    provider: google
+    tier: D
+    context_window: 1048576
+    api_key_env: GOOGLE_API_KEY
+    rate_limit_rpm: 200
+
+  # Additional Together AI models (smaller/free)
+  - id: meta-llama/Llama-3.3-70B-Instruct-Turbo
+    provider: together
+    tier: A
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: meta-llama/Llama-3.1-70B-Instruct-Turbo
+    provider: together
+    tier: A
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: meta-llama/Llama-3.1-8B-Instruct-Turbo
+    provider: together
+    tier: C
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 200
+  - id: mistralai/Mistral-7B-Instruct-v0.3
+    provider: together
+    tier: D
+    context_window: 32768
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 300
+  - id: mistralai/Mixtral-8x7B-Instruct-v0.1
+    provider: together
+    tier: B
+    context_window: 32768
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: mistralai/Mixtral-8x22B-Instruct-v0.1
+    provider: together
+    tier: A
+    context_window: 65536
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 50
+  - id: Qwen/Qwen2.5-72B-Instruct-Turbo
+    provider: together
+    tier: A
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: Qwen/Qwen2.5-32B-Instruct-Turbo
+    provider: together
+    tier: B
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: Qwen/Qwen2.5-7B-Instruct-Turbo
+    provider: together
+    tier: D
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 300
+  - id: deepseek-ai/DeepSeek-R1-Distill-Llama-70B
+    provider: together
+    tier: A
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 50
+  - id: deepseek-ai/DeepSeek-R1-Distill-Qwen-32B
+    provider: together
+    tier: B
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 100
+  - id: deepseek-ai/DeepSeek-R1-Distill-Qwen-14B
+    provider: together
+    tier: C
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 150
+  - id: deepseek-ai/DeepSeek-R1-Distill-Qwen-7B
+    provider: together
+    tier: D
+    context_window: 131072
+    api_key_env: TOGETHER_API_KEY
+    rate_limit_rpm: 200
 
 failover:
   max_retries_per_node: 2
