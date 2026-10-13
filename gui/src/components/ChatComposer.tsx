@@ -51,13 +51,13 @@ export function ChatComposer() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <div className="category-pills">
               {CATEGORIES.map(c => (
-                <button key={c} className={`cat-pill ${category === c ? 'active' : ''}`} onClick={() => setCategory(c)}>{c}</button>
+                <button key={c} className={`cat-pill ${category === c ? 'active' : ''} interactive pressable`} onClick={() => setCategory(c)}>{c}</button>
               ))}
             </div>
             <span className="composer-hint">{loading ? 'Working…' : '↵ Enter to send · ⇧↵ new line'}</span>
           </div>
         </div>
-        <button className="send-btn" onClick={send} disabled={loading || !text.trim()} aria-label="Send">
+        <button className="send-btn pressable" onClick={send} disabled={loading || !text.trim()} aria-label="Send">
           <SendIcon size={16} />
         </button>
       </div>
