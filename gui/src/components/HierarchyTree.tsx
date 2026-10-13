@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useRef, useEffect } from 'react'
 import { useTreeStore } from '../state/treeStore'
 import { Node } from '../state/types'
 import { NetworkIcon, ChevronRightIcon } from './icons'
@@ -9,10 +9,30 @@ function NodeRow({ node, depth }: { node: Node; depth: number }) {
   const hasChildren = children.length > 0
   const expanded = node.expanded ?? true
   const sel = selectedNodeId === node.id
+  const [isAnimating, setIsAnimating] = useState(false)
+  const childrenRef = useRef<HTMLDivElement>(null)
+  const [contentHeight, setContentHeight] = useState(0)
+
+  useEffect(() => {
+    if (childrenRef.current) {
+      if (expanded) {
+        const height = childrenRef.current.scrollHeight
+        setContentHeight(height)
+        setIsAnimating(true)
+        requestAnimationFrame(() => {
+          setTimeout(() => setIsAnimating(false), 220)
+        })
+      } else {
+        setContentHeight(0)
+        setIsAnimating(true)
+        setTimeout(() => setIsAnimating(false), 220)
+      }
+    }
+  }, [expanded])
 
   return (
     <>
-      <button className={`tree-row ${sel ? 'selected' : ''}`} onClick={() => selectNode(node.id)} style={{ paddingLeft: 8 + depth * 14 }}>
+      <button className={`tree-row ${sel ? 'selected' : ''} interactive`} onClick={() => selectNode(node.id)} style={{ paddingLeft: 8 + depth * 14 }}>
         <span className={`tree-chevron ${expanded ? 'open' : ''} ${hasChildren ? '' : 'placeholder'}`} onClick={(e) => { if (hasChildren) { e.stopPropagation(); toggleNode(node.id) } }}>
           <ChevronRightIcon size={11} />
         </span>
@@ -22,7 +42,13 @@ function NodeRow({ node, depth }: { node: Node; depth: number }) {
         {hasChildren && <span className="tree-count">×{children.length}</span>}
         <span className="tree-tier">{node.tier || ''}</span>
       </button>
-      {expanded && children.map(c => <NodeRow key={c.id} node={c} depth={depth + 1} />)}
+      {hasChildren && (
+        <div style={{ overflow: 'hidden', maxHeight: expanded ? contentHeight : 0, opacity: expanded ? 1 : 0, transition: 'max-height 220ms cubic-bezier(0.2,0,0,1), opacity 180ms cubic-bezier(0.2,0,0,1)' }}>
+          <div ref={childrenRef} style={{ paddingLeft: 4 }}>
+            {children.map(c => <NodeRow key={c.id} node={c} depth={depth + 1} />)}
+          </div>
+        </div>
+      )}
     </>
   )
 }
