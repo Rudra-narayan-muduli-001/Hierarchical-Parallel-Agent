@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useTreeStore } from '../state/treeStore'
 import { Node } from '../state/types'
 
@@ -27,16 +27,28 @@ export function ProcessTimeline() {
   const { nodes, messages, loading } = useTreeStore()
   const hasOutput = useMemo(() => messages.some(m => m.role === 'assistant' && m.status === 'done' && m.content), [messages])
   const states = useMemo(() => derive(nodes, !!hasOutput, loading), [nodes, hasOutput, loading])
+  const [prevStates, setPrevStates] = useState<DotState[]>(states)
+  const [animatingIndex, setAnimatingIndex] = useState<number | null>(null)
+
+  useEffect(() => {
+    const changedIndex = states.findIndex((s, i) => s !== prevStates[i])
+    if (changedIndex !== -1) {
+      setAnimatingIndex(changedIndex)
+      setTimeout(() => setAnimatingIndex(null), 400)
+    }
+    setPrevStates(states)
+  }, [states, prevStates])
+
   if (!nodes.length && !loading) return null
   return (
-    <div className="timeline-bar">
+    <div className="timeline-bar animate-slide-down">
       {LABELS.map((label, i) => (
         <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="tl-step" style={{ opacity: states[i] === 'pending' ? 0.6 : 1 }}>
-            <span className={`tl-dot ${states[i]}`} />
+          <span className="tl-step transition-colors" style={{ opacity: states[i] === 'pending' ? 0.6 : 1 }}>
+            <span className={`tl-dot ${states[i]} ${animatingIndex === i ? 'animate-bounce-in' : ''} transition-all`} />
             {label}
           </span>
-          {i < LABELS.length - 1 && <span className="tl-arrow">→</span>}
+          {i < LABELS.length - 1 && <span className="tl-arrow transition-colors">→</span>}
         </span>
       ))}
     </div>
