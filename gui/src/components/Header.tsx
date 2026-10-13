@@ -8,7 +8,7 @@ function connectionLabel(wsConnected: boolean, loading: boolean) {
   return { text: 'Idle', cls: 'off' as const }
 }
 
-export function Header() {
+export function Header({ className = '' }: { className?: string }) {
   const { wsConnected, loading, activeTaskId, pendingTaskLabel, nodes } = useTreeStore()
   const conn = connectionLabel(wsConnected, loading)
 
@@ -22,7 +22,7 @@ export function Header() {
   }, [nodes])
 
   return (
-    <header className="app-header">
+    <header className={`app-header ${className}`}>
       <div className="brand">
         <div className="brand-mark"><BoltIcon size={16} /></div>
         <div>
