@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useEffect, useState } from 'react'
 import { useTreeStore } from '../state/treeStore'
 import { SearchIcon, CrownIcon, UsersIcon, BranchIcon, BoltIcon, MergeIcon, CheckIcon, AlertIcon, ActivityIcon } from './icons'
 import { Node } from '../state/types'
@@ -52,6 +52,11 @@ export function PipelineStepper() {
   const { nodes, loading, messages } = useTreeStore()
   const hasOutput = useMemo(() => messages.some(m => m.role === 'assistant' && m.status === 'done' && m.content), [messages])
   const states = useMemo(() => deriveStates(nodes, loading, !!hasOutput), [nodes, loading, hasOutput])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // live log: last 5 interesting node statuses
   const liveLog = useMemo(() => {
@@ -65,24 +70,24 @@ export function PipelineStepper() {
   }, [nodes])
 
   return (
-    <div className="panel">
+    <div className="panel animate-fade-in">
       <div className="panel-title"><ActivityIcon size={12} /> How it works</div>
       <div className="stepper">
         {STEPS.map((step, i) => {
           const state = states[i]
           return (
-            <div key={i} className="step-row">
+            <div key={i} className={`step-row ${mounted ? 'animate-slide-down' : ''} stagger-${i + 1}`} style={{ animationDelay: mounted ? `${i * 50}ms` : '0ms' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <div className={`step-dot ${state}`}>
+                <div className={`step-dot ${state} transition-standard`}>
                   {state === 'done' ? <CheckIcon size={12} /> : state === 'failed' ? <AlertIcon size={12} /> : step.icon}
                 </div>
-                <div className={`step-line ${state === 'done' ? 'done' : state === 'active' ? 'active' : ''}`} />
+                <div className={`step-line ${state === 'done' ? 'done' : state === 'active' ? 'active' : ''} transition-standard`} />
               </div>
               <div className="step-body">
                 <div className="step-title">{step.title}</div>
                 <div className="step-sub">{step.sub}</div>
                 {state === 'active' && <div className="step-shimmer" />}
-                <div className={`step-badge ${state === 'active' ? 'live' : state === 'done' ? 'done' : state === 'failed' ? 'failed' : ''}`}>
+                <div className={`step-badge ${state === 'active' ? 'live' : state === 'done' ? 'done' : state === 'failed' ? 'failed' : ''} transition-colors`}>
                   {state === 'done' ? '✓ Done' : state === 'active' ? '● Live' : state === 'failed' ? '✕ Needs attention' : '○ Waiting'}
                 </div>
               </div>
@@ -96,8 +101,8 @@ export function PipelineStepper() {
           <div className="panel-title" style={{ marginBottom: 8 }}>Live log</div>
           <div className="live-log">
             {liveLog.map(l => (
-              <div key={l.id} className="live-item">
-                <span className={`tree-dot status-${l.status}`} style={{ marginTop: 4 }} />
+              <div key={l.id} className="live-item animate-fade-in">
+                <span className={`tree-dot status-${l.status}`} style={{ marginTop: 1 }} />
                 <span className="ellipsis">{l.text}</span>
               </div>
             ))}
